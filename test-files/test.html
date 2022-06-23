@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+        <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+        <py-env>
+            - paths:
+                - ../src/main.py
+                - ../src/element.py
+                - ../src/event_consts.py
+        </py-env>
+    </head>
+    <style>
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+    </style>
+    <body>
+        <div id="root"></div>
+    </body>
+
+    <py-script>
+        from main import Pie
+        from js import alert
+
+        rpy = Pie()
+
+        def Content(props):
+            inp, setInp = rpy.useState("inp", "")
+
+            def lmao(e):
+                console.log(e)
+                alert("LMAO")
+
+            def handleInput(e):
+                setInp(e.target.value)
+                console.log(e.target.value)
+
+            return rpy.createPieElement(None,"div", None, [
+                rpy.createPieElement(None,"p", None, "Hello World!"),
+                rpy.createPieElement(None,"p", {"style": "background-color: #f00; color:#fff;"}, "This is a paragraph."),
+                rpy.createPieElement(None,"button", {"onclick": lmao}, "Click Me!"),
+                rpy.createPieElement(None,"input", {"type": "text", "onkeyup": handleInput}, None)
+            ])
+
+        def App():
+            return rpy.createPieElement(None,"div", None, [
+                Content({}),
+            ])
+
+        def Render():
+            root = document.getElementById("root")
+            rpy.render(App(), root)
+
+        Render()
+
+    </py-script>
+</html>
