@@ -1,4 +1,3 @@
-from numpy import diff
 from js import document
 from pyodide import create_proxy
 from element import PieElement
@@ -88,7 +87,7 @@ class Pie():
                 el.appendChild(document.createTextNode(element.children))
             elif type(element.children) is list:
                 for i in element.children:
-                    el.appendChild(i)
+                    el.appendChild(self.createElement(i))
 
         if element.props:
             for key in element.props.keys():
