@@ -9,9 +9,7 @@
         <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
         <py-env>
             - paths:
-                - ../src/main.py
-                - ../src/element.py
-                - ../src/event_consts.py
+                - ../pkg/pie.py
         </py-env>
     </head>
     <style>
@@ -28,7 +26,7 @@
     </body>
 
     <py-script>
-        from main import Pie
+        from pie import Pie
         from js import alert
 
         rpy = Pie()

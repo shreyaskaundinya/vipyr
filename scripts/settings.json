@@ -1,0 +1,6 @@
+{
+    "file_source": "src/",
+    "entry": "src/main.py",
+    "target": "/pkg/pie.py",
+    "exclude_modules": ["js", "pyodide"]
+}
