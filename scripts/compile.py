@@ -3,7 +3,7 @@ import os
 from bundler import recursive_bundler, get_content
 
 
-if __name__ == "__main__":
+def compile_files():
     root = os.path.dirname(os.path.abspath(__file__))
     settings = json.loads(get_content(root+"\settings.json"))
 
