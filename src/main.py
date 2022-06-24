@@ -23,7 +23,7 @@ class Pie():
     """
 
     def __init__(self):
-        self.VDOM = {} #change
+        self.currVDOM = None  
         self.rootElement = None
         self.state = {}
 
@@ -35,8 +35,6 @@ class Pie():
         func = lambda x: self.set(name, x)
         return self.state[name], func
     
-        
-
     def changed(self, oldElement : PieElement, newElement: PieElement):
         return (oldElement.type != newElement.type)
 
@@ -66,6 +64,7 @@ class Pie():
             - replace -> type changes
         """
         pass
+        
 
 
     def createPieElement(self, key, tagName, props, children):
@@ -103,4 +102,5 @@ class Pie():
             """
             Function to handle the render
             """
-            root.appendChild(self.createElement(element))
+            self.currVDOM = element
+            root.appendChild(self.createElement(self.currVDOM))
