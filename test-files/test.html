@@ -78,8 +78,8 @@
                 h(None,"p", {"style": "background-color: #f00; color:#fff;"}, "This is a paragraph."),
                 h(None,"button", {"onclick": lmao}, "Click Me!"),
                 h(None,"p", {"style": "padding: 0.3rem 1rem; border: 1px solid black; margin: 1rem; border-radius: 10px;width: max-content;"}, inp.get),
-                h(None,"input", {"type": "text", "onkeyup": handleInput, "value": inp.get}, None),
-                ObjectComp()
+                h(None,"input", {"type": "text", "onkeyup": handleInput, "value": inp.get, "style":"border: 1px solid black;"}, None),      
+                
             ])
 
         def App():
