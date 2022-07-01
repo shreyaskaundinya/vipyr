@@ -1,14 +1,16 @@
-from js import document
+from js import document, console
 from pyodide import create_proxy
 
 class PieElement():
     __slots__=['type','props','state','key','children']
+    
     def __init__(self,type='',props={},state={},key=None,children=None):
         self.type=type
         self.props=props
         self.state=state
         self.key=key
         self.children=children
+
     def __str__(self):
         print(f"Type: {self.type}")
         print(f"Props: {self.props}")
@@ -16,6 +18,25 @@ class PieElement():
         print(f"Number of children: {len(self.children)}")
 
 
+
+class State:
+    def __init__(self, initialState, dispatcher):
+        self.state = initialState
+        self.dispatcher = dispatcher
+        # console.log("called init with ", initialState)
+    
+    def set(self, action):
+        if hasattr(action, "__call__"):
+            self.state = action(self.state)
+
+        self.state = action
+
+        # console.log("called set with", self.state)
+        self.dispatcher()
+
+    def get(self):
+        # console.log("called get => ", self.state)
+        return self.state
 
 CREATE = "CREATE"
 REMOVE = "REMOVE"
@@ -42,20 +63,22 @@ class Pie():
     """
 
     def __init__(self):
-        self.VDOM = {} #change
+        self.currVDOM = None  
         self.rootElement = None
         self.state = {}
 
-    def set(self, name, data):
-        self.state[name] = data
+    def dispatchEvent(self):
+        self.rootElement.removeChild(self.rootElement.firstElementChild)
+        self.rootElement.appendChild(self.createElement(self.currVDOM()))
 
     def useState(self, name, initialState = None):
-        self.state[name] = initialState
-        func = lambda x: self.set(name, x)
-        return self.state[name], func
+        # if state already return it, else create the new state
+        try:
+            return self.state[name]
+        except:
+            self.state[name] = State(initialState, self.dispatchEvent)
+            return self.state[name]
     
-        
-
     def changed(self, oldElement : PieElement, newElement: PieElement):
         return (oldElement.type != newElement.type)
 
@@ -85,24 +108,23 @@ class Pie():
             - replace -> type changes
         """
         pass
-
-
+        
     def createPieElement(self, key, tagName, props, children):
         """
         Function to create vdom element
         """
         return PieElement(key=key, type=tagName, props=props, state={}, children=children)
 
-
     def createElement(self, element:PieElement):
         """
         Function to create an actual DOM element from the virtual DOM element
         """
-
         el = document.createElement(element.type)
 
         if element.children:
-            if type(element.children) is str:
+            if hasattr(element.children, "__call__"):
+                el.appendChild(document.createTextNode(element.children()))
+            elif type(element.children) is str:
                 el.appendChild(document.createTextNode(element.children))
             elif type(element.children) is list:
                 for i in element.children:
@@ -112,6 +134,8 @@ class Pie():
             for key in element.props.keys():
                 if key[0:2] == "on":
                     el.addEventListener(key[2:], create_proxy(element.props[key]))
+                elif hasattr(element.props[key], "__call__"):
+                    el.setAttribute(key, element.props[key]())
                 else :
                     el.setAttribute(key, element.props[key])
 
@@ -122,4 +146,6 @@ class Pie():
             """
             Function to handle the render
             """
-            root.appendChild(self.createElement(element))
+            self.currVDOM = element
+            self.rootElement = root
+            root.appendChild(self.createElement(self.currVDOM()))

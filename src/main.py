@@ -1,6 +1,7 @@
-from js import document
+from js import document, console
 from pyodide import create_proxy
 from element import PieElement
+from state import State
 from event_consts import CREATE,REMOVE,REPLACE,UPDATE
 
 class Pie():
@@ -27,13 +28,17 @@ class Pie():
         self.rootElement = None
         self.state = {}
 
-    def set(self, name, data):
-        self.state[name] = data
+    def dispatchEvent(self):
+        self.rootElement.removeChild(self.rootElement.firstElementChild)
+        self.rootElement.appendChild(self.createElement(self.currVDOM()))
 
     def useState(self, name, initialState = None):
-        self.state[name] = initialState
-        func = lambda x: self.set(name, x)
-        return self.state[name], func
+        # if state already return it, else create the new state
+        try:
+            return self.state[name]
+        except:
+            self.state[name] = State(initialState, self.dispatchEvent)
+            return self.state[name]
     
     def changed(self, oldElement : PieElement, newElement: PieElement):
         return (oldElement.type != newElement.type)
@@ -65,24 +70,22 @@ class Pie():
         """
         pass
         
-
-
     def createPieElement(self, key, tagName, props, children):
         """
         Function to create vdom element
         """
         return PieElement(key=key, type=tagName, props=props, state={}, children=children)
 
-
     def createElement(self, element:PieElement):
         """
         Function to create an actual DOM element from the virtual DOM element
         """
-
         el = document.createElement(element.type)
 
         if element.children:
-            if type(element.children) is str:
+            if hasattr(element.children, "__call__"):
+                el.appendChild(document.createTextNode(element.children()))
+            elif type(element.children) is str:
                 el.appendChild(document.createTextNode(element.children))
             elif type(element.children) is list:
                 for i in element.children:
@@ -92,6 +95,8 @@ class Pie():
             for key in element.props.keys():
                 if key[0:2] == "on":
                     el.addEventListener(key[2:], create_proxy(element.props[key]))
+                elif hasattr(element.props[key], "__call__"):
+                    el.setAttribute(key, element.props[key]())
                 else :
                     el.setAttribute(key, element.props[key])
 
@@ -103,4 +108,5 @@ class Pie():
             Function to handle the render
             """
             self.currVDOM = element
-            root.appendChild(self.createElement(self.currVDOM))
+            self.rootElement = root
+            root.appendChild(self.createElement(self.currVDOM()))

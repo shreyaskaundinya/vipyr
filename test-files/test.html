@@ -30,33 +30,66 @@
         from js import alert
 
         rpy = Pie()
+        h = rpy.createPieElement
+
+        def ObjectComp():
+            state = rpy.useState("obj", [])
+            form = rpy.useState("form", {
+                "todo": ""
+            })
+
+            comp = lambda state: list(map(lambda x: h(None, "p", {}, x, state.get())))
+
+            def handleSubmit(e):
+                e.preventDefault()
+                state.set(lambda x: x + [form.get(),])
+                form.set({})
+
+            def handleInput(e):
+
+                def setProp(prev, e):
+                    x = prev
+                    x[e.target.name] = e.target.value
+                    return x
+
+                form.set(setProp)
+
+
+            return h(None, "div", {"style": "padding: 1rem; border: 1px solid black; margin: 1rem;"}, [
+                h(None, "h1", None, "List"),
+                h(None, "form", {"onsubmit": handleSubmit}, [
+                    h(None, "input", {"name":"todo", "value": lambda: form.get()["todo"], "onkeyup": handleInput}, None),
+                    h(None, "button", {}, "Add"),
+                ])
+            ])
 
         def Content(props):
-            inp, setInp = rpy.useState("inp", "")
+            inp = rpy.useState("inp", "")
 
             def lmao(e):
                 console.log(e)
                 alert("LMAO")
 
             def handleInput(e):
-                setInp(e.target.value)
-                console.log(e.target.value)
+                inp.set(e.target.value)
 
-            return rpy.createPieElement(None,"div", None, [
-                rpy.createPieElement(None,"p", None, "Hello World!"),
-                rpy.createPieElement(None,"p", {"style": "background-color: #f00; color:#fff;"}, "This is a paragraph."),
-                rpy.createPieElement(None,"button", {"onclick": lmao}, "Click Me!"),
-                rpy.createPieElement(None,"input", {"type": "text", "onkeyup": handleInput}, None)
+            return h(None,"div", None, [
+                h(None,"p", None, "Hello World!"),
+                h(None,"p", {"style": "background-color: #f00; color:#fff;"}, "This is a paragraph."),
+                h(None,"button", {"onclick": lmao}, "Click Me!"),
+                h(None,"p", {"style": "padding: 0.3rem 1rem; border: 1px solid black; margin: 1rem; border-radius: 10px;width: max-content;"}, inp.get),
+                h(None,"input", {"type": "text", "onkeyup": handleInput, "value": inp.get}, None),
+                ObjectComp()
             ])
 
         def App():
-            return rpy.createPieElement(None,"div", None, [
+            return h(None, "div", None, [
                 Content({}),
             ])
 
         def Render():
             root = document.getElementById("root")
-            rpy.render(App(), root)
+            rpy.render(App, root)
 
         Render()
 
