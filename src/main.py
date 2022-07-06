@@ -1,6 +1,5 @@
 from js import document, console
 from pyodide import create_proxy
-from element import PieElement
 from state import State
 from event_consts import CREATE,REMOVE,REPLACE,UPDATE
 
@@ -29,19 +28,19 @@ class Pie():
         self.store = {}
 
     def dispatchEvent(self):
-        # self.rootElement.removeChild(self.rootElement.firstElementChild)
-        # self.rootElement.appendChild(self.createElement(self.currVDOM()))
+        self.rootElement.removeChild(self.rootElement.firstElementChild)
+        self.rootElement.appendChild(self.createElement(self.currVDOM()))
 
     def useState(self, name, initialState = None):
         # if state already return it, else create the new state
         try:
-            return self.state[name]
+            return self.store[name]
         except:
-            self.state[name] = State(initialState, self.dispatchEvent)
-            return self.state[name]
+            self.store[name] = State(initialState, self.dispatchEvent)
+            return self.store[name]
     
-    def changed(self, oldElement : PieElement, newElement: PieElement):
-        return (oldElement.type != newElement.type)
+    """def changed(self, oldElement : PieElement, newElement: PieElement):
+        return (oldElement.type != newElement.type)"""
 
     def diffTree():
         # call diff on the whole tree
@@ -74,31 +73,32 @@ class Pie():
         """
         Function to create vdom element
         """
-        return PieElement(key=key, type=tagName, props=props, state={}, children=children)
+        #return PieElement(key=key, type=tagName, props=props, state={}, children=children)
+        return {'key':key,'type':tagName,'props':props,'state':{},'children':children}
 
-    def createElement(self, element:PieElement):
+    def createElement(self, element):
         """
         Function to create an actual DOM element from the virtual DOM element
         """
-        el = document.createElement(element.type)
+        el = document.createElement(element['type'])
 
-        if element.children:
-            if hasattr(element.children, "__call__"):
-                el.appendChild(document.createTextNode(element.children()))
-            elif type(element.children) is str:
-                el.appendChild(document.createTextNode(element.children))
-            elif type(element.children) is list:
-                for i in element.children:
+        if element['children']:
+            if hasattr(element['children'], "__call__"):
+                el.appendChild(document.createTextNode(element['children']()))
+            elif type(element['children']) is str:
+                el.appendChild(document.createTextNode(element['children']))
+            elif type(element['children']) is list:
+                for i in element['children']:
                     el.appendChild(self.createElement(i))
 
-        if element.props:
-            for key in element.props.keys():
+        if element['props']:
+            for key in element['props'].keys():
                 if key[0:2] == "on":
-                    el.addEventListener(key[2:], create_proxy(element.props[key]))
-                elif hasattr(element.props[key], "__call__"):
-                    el.setAttribute(key, element.props[key]())
+                    el.addEventListener(key[2:], create_proxy(element['props'][key]))
+                elif hasattr(element['props'][key], "__call__"):
+                    el.setAttribute(key, element['props'][key]())
                 else :
-                    el.setAttribute(key, element.props[key])
+                    el.setAttribute(key, element['props'][key])
 
         return el
 
