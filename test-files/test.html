@@ -38,34 +38,34 @@
                 "todo": ""
             })
 
-            comp = lambda state: list(map(lambda x: h(None, "p", {}, x, state.get())))
+            comp = lambda state: list(map(lambda x: h(None, "p", {}, x), state.get()))
 
             def handleSubmit(e):
                 e.preventDefault()
-                state.set(lambda x: x + [form.get(),])
-                form.set({})
+                console.log(form.get())
+                form.set({"todo": ""})
+
+            def setProp(prev, e):
+                x = prev
+                x[e.target.name] = e.target.value
+                return x
 
             def handleInput(e):
-
-                def setProp(prev, e):
-                    x = prev
-                    x[e.target.name] = e.target.value
-                    return x
-
-                form.set(setProp)
+                e.preventDefault()
+                form.set({e.target.name: e.target.value})
 
 
             return h(None, "div", {"style": "padding: 1rem; border: 1px solid black; margin: 1rem;"}, [
                 h(None, "h1", None, "List"),
                 h(None, "form", {"onsubmit": handleSubmit}, [
-                    h(None, "input", {"name":"todo", "value": lambda: form.get()["todo"], "onkeyup": handleInput}, None),
+                    h(None, "input", {"name":"todo", "value": lambda: (form.get()["todo"]), "onkeyup": handleInput, "style": "border: 1px solid black;"}, None),
                     h(None, "button", {}, "Add"),
                 ])
             ])
 
         def Content(props):
             inp = rpy.useState("inp", "")
-
+            
             def lmao(e):
                 console.log(e)
                 alert("LMAO")

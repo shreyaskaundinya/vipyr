@@ -20,6 +20,8 @@ class PieElement():
 def h(type, props, state={}, key=None, children=None):
     return PieElement(type, props, state, key, children)
 
+def d(type, props, state={}, key=None, children=None):
+    return {"type": type, "props": props, "state": state, "children": children}
 
 
 def createTree():
@@ -80,18 +82,76 @@ def createTree():
         ])
     ])
 
+
+def createDictTree():
+    return d("div", None, None, None, [
+        d("p", None, None, None, "Hello world"),
+        d("p", None, None, None, "Hello world"),
+        d("p", None, None, None, "Hello world"),
+        d("p", None, None, None, "Hello world"),
+        d("p", None, None, None, "Hello world"),
+        d("div", None, None, None, [
+            d("p", None, None, None, "Hello world"),
+            d("p", None, None, None, "Hello world"),
+            d("p", None, None, None, "Hello world"),
+            d("p", None, None, None, "Hello world"),
+            d("div", None, None, None, [
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+            ]),
+            d("div", None, None, None, [
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+            ]),
+            d("div", None, None, None, [
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+
+            d("div", None, None, None, [
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+                d("p", None, None, None, "Hello world"),
+                d("div", None, None, None, [
+                    d("p", None, None, None, "Hello world"),
+                    d("p", None, None, None, "Hello world"),
+                    d("p", None, None, None, "Hello world"),
+                    d("p", None, None, None, "Hello world"),
+                ]),
+                d("div", None, None, None, [
+                    d("p", None, None, None, "Hello world"),
+                    d("p", None, None, None, "Hello world"),
+                    d("p", None, None, None, "Hello world"),
+                    d("p", None, None, None, "Hello world"),
+                ]),
+                d("div", None, None, None, [
+                    d("p", None, None, None, "Hello world"),
+                    d("p", None, None, None, "Hello world"),
+                    d("p", None, None, None, "Hello world"),
+                    d("p", None, None, None, "Hello world"),
+                ])
+                ])
+            ]),
+        ])
+    ])
+
 start = datetime.now()
-x = createTree()
-x = createTree()
-x = createTree()
-x = createTree()
-x = createTree()
-x = createTree()
-x = createTree()
-x = createTree()
-x = createTree()
-x = createTree()
-x = createTree()
+for i in range(0, 10000):
+    createTree() 
+end = datetime.now()
+
+print(end, start, end-start)
+
+
+start = datetime.now()
+for i in range(0, 10000):
+    createDictTree() 
 end = datetime.now()
 
 print(end, start, end-start)
