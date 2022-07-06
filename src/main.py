@@ -26,11 +26,11 @@ class Pie():
     def __init__(self):
         self.currVDOM = None  
         self.rootElement = None
-        self.state = {}
+        self.store = {}
 
     def dispatchEvent(self):
-        self.rootElement.removeChild(self.rootElement.firstElementChild)
-        self.rootElement.appendChild(self.createElement(self.currVDOM()))
+        # self.rootElement.removeChild(self.rootElement.firstElementChild)
+        # self.rootElement.appendChild(self.createElement(self.currVDOM()))
 
     def useState(self, name, initialState = None):
         # if state already return it, else create the new state

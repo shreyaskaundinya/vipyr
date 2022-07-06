@@ -8,7 +8,11 @@ class State:
         if hasattr(action, "__call__"):
             self.state = action(self.state)
 
-        self.state = action
+        if type(action) is dict and type(self.state) is dict:
+            for key in action.keys():
+                self.state[key] = action[key]
+        else:
+            self.state = action
 
         # console.log("called set with", self.state)
         self.dispatcher()

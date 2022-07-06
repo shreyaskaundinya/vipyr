@@ -29,7 +29,11 @@ class State:
         if hasattr(action, "__call__"):
             self.state = action(self.state)
 
-        self.state = action
+        if type(action) is dict and type(self.state) is dict:
+            for key in action.keys():
+                self.state[key] = action[key]
+        else:
+            self.state = action
 
         # console.log("called set with", self.state)
         self.dispatcher()
@@ -37,6 +41,7 @@ class State:
     def get(self):
         # console.log("called get => ", self.state)
         return self.state
+
 
 CREATE = "CREATE"
 REMOVE = "REMOVE"
@@ -65,11 +70,11 @@ class Pie():
     def __init__(self):
         self.currVDOM = None  
         self.rootElement = None
-        self.state = {}
+        self.store = {}
 
     def dispatchEvent(self):
-        self.rootElement.removeChild(self.rootElement.firstElementChild)
-        self.rootElement.appendChild(self.createElement(self.currVDOM()))
+        # self.rootElement.removeChild(self.rootElement.firstElementChild)
+        # self.rootElement.appendChild(self.createElement(self.currVDOM()))
 
     def useState(self, name, initialState = None):
         # if state already return it, else create the new state
@@ -149,3 +154,4 @@ class Pie():
             self.currVDOM = element
             self.rootElement = root
             root.appendChild(self.createElement(self.currVDOM()))
+
