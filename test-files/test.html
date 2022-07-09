@@ -71,20 +71,22 @@
                 alert("LMAO")
 
             def handleInput(e):
+                e.preventDefault()
+                e.stopPropagation()
+                console.log("CALLING HANDLE INPUT")
                 inp.set(e.target.value)
 
             return h(None,"div", None, [
-                h(None,"p", None, "Hello World!"),
-                h(None,"p", {"style": "background-color: #f00; color:#fff;"}, "This is a paragraph."),
-                h(None,"button", {"onclick": lmao}, "Click Me!"),
-                h(None,"p", {"style": "padding: 0.3rem 1rem; border: 1px solid black; margin: 1rem; border-radius: 10px;width: max-content;"}, inp.get),
-                h(None,"input", {"type": "text", "onkeyup": handleInput, "value": inp.get, "style":"border: 1px solid black;"}, None),      
-                
+                h(None,"p", {
+                    "style": "border: 1px solid black; padding: 0.3rem 1rem; ",
+                    "onclick":lmao
+                }, inp.get),
+                h(None,"input", {"type": "text", "onkeyup": handleInput, "value": inp.get, "style":"border: 1px solid black;"}, None)
             ])
 
         def App():
-            return h(None, "div", None, [
-                Content({}),
+            return h(None, "div", {"id": "app"}, [
+                h(None, Content, None, None),
             ])
 
         def Render():

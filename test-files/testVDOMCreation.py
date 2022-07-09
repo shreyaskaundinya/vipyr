@@ -155,3 +155,4 @@ for i in range(0, 10000):
 end = datetime.now()
 
 print(end, start, end-start)
+#need to test rerendering time

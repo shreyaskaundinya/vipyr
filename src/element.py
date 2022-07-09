@@ -1,7 +1,7 @@
 class PieElement():
     __slots__=['type','props','state','key','children']
     
-    def __init__(self,type='',props={},state={},key=None,children=None):
+    def __init__(self,type='',props={},state={},key=None,children=None): #props and state should be replaced by attribute
         self.type=type
         self.props=props
         self.state=state

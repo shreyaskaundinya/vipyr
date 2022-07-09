@@ -1,3 +1,5 @@
+from js import console
+
 class State:
     def __init__(self, initialState, dispatcher):
         self.state = initialState
@@ -5,6 +7,7 @@ class State:
         # console.log("called init with ", initialState)
     
     def set(self, action):
+        # console.log("CALLING STATE SET")
         if hasattr(action, "__call__"):
             self.state = action(self.state)
 
