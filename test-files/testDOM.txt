@@ -1,0 +1,68 @@
+OLD
+
+{
+    type: "div",
+    props: {
+        id: "app"
+    }
+    children: [
+        {
+            type: "div",
+            props: None,
+            children: [
+                {
+                    type: "p",
+                    props: {
+                        "style": "",
+                    },
+                    children: inp.get
+                },
+                {
+                    type: "input",
+                    props:  {
+                        "type": "text", 
+                        "onkeyup": handleInput, 
+                        "value": inp.get, 
+                        "style":""
+                    },
+                    children: None
+                }
+            ]
+        }
+    ]
+}
+
+
+NEW 
+
+{
+    type: "div",
+    props: {
+        id: "app"
+    }
+    children: [
+        {
+            type: "div",
+            props: None,
+            children: [
+                {
+                    type: "p",
+                    props: {
+                        "style": "",
+                    },
+                    children: inp.get
+                },
+                {
+                    type: "input",
+                    props:  {
+                        "type": "text", 
+                        "onkeyup": handleInput, 
+                        "value": inp.get, 
+                        "style":""
+                    },
+                    children: None
+                }
+            ]
+        }
+    ]
+}
