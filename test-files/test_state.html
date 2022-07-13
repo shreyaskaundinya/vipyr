@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+        <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+        <py-env>
+            - paths:
+                - ../pkg/pie.py
+        </py-env>
+    </head>
+    <style>
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+    </style>
+    <body>
+        <div id="root"></div>
+    </body>
+
+    <py-script>
+        from pie import Pie
+        from js import alert
+        from pyodide import create_proxy, to_js
+
+        rpy = Pie()
+        h = rpy.createPieElement
+
+        def ObjectComp(props):
+            state = rpy.useState("obj", [])
+            form = rpy.useState("form", {
+                "todo": ""
+            })
+
+            comp = lambda state: list(map(lambda x: h(None, "p", {}, x), state.get()))
+
+            def handleSubmit(e):
+                e.preventDefault()
+                state.set([*state.get(), form.get("todo")])
+                console.log(to_js(state.get()))
+                form.set({"todo": ""})
+
+            def setProp(prev, e):
+                x = prev
+                x[e.target.name] = e.target.value
+                return x
+
+            def handleInput(e):
+                e.preventDefault()
+                form.set({e.target.name: e.target.value})
+
+
+            return h(None, "div", {"style": "padding: 1rem; border: 1px solid black; margin: 1rem;"}, [
+                h(None, "h1", None, "List"),
+                h(None, "form", {"onsubmit": handleSubmit}, [
+                    h(None, "input", {"name":"todo", "value": lambda: (form.get("todo")), "onkeyup": handleInput, "style": "border: 1px solid black;"}, None),
+                    h(None, "button", {}, "Add"),
+                ]),
+                h(None, "div", None, comp(state))
+            ])
+
+
+        def ObjectComp2(props):
+            state = rpy.useState("obj2", [])
+            form = rpy.useState("form2", {
+                "todo": ""
+            })
+
+            comp = lambda state: list(map(lambda x: h(None, "p", {}, x), state.get()))
+
+            def addItem(prev):
+                return [*prev, form.get("todo")]
+
+            def handleSubmit(e):
+                e.preventDefault()
+                state.set(addItem)
+                form.set({"todo": ""})
+            
+            def setProp(prev, e):
+                x = prev
+                x[e.target.name] = e.target.value
+                return x
+
+            def handleInput(e):
+                e.preventDefault()
+                form.set({e.target.name: e.target.value})
+
+
+            return h(None, "div", {"style": "padding: 1rem; border: 1px solid black; margin: 1rem;"}, [
+                h(None, "h1", None, "Function update"),
+                h(None, "form", {"onsubmit": handleSubmit}, [
+                    h(None, "input", {"name":"todo", "value": lambda: (form.get("todo")), "onkeyup": handleInput, "style": "border: 1px solid black;"}, None),
+                    h(None, "button", {}, "Add"),
+                ]),
+                h(None, "div", None, comp(state))
+            ])
+
+        
+        def ObjectComp3(props):
+            state = rpy.useState("obj3", [])
+            form = rpy.useState("form3", {
+                "todo": ""
+            })
+
+            comp = lambda state: list(map(lambda x: h(None, "p", {}, x["todo"]), state.get()))
+
+            def handleSubmit(e):
+                e.preventDefault()
+                state.set([*state.get(), form.get()])
+                form.set({"todo": ""})
+
+            def handleInput(e):
+                e.preventDefault()
+                form.set({e.target.name: e.target.value})
+
+            return h(None, "div", {"style": "padding: 1rem; border: 1px solid black; margin: 1rem;"}, [
+                h(None, "h1", None, "Objects in an array"),
+                h(None, "form", {"onsubmit": handleSubmit}, [
+                    h(None, "input", {"name":"todo", "value": lambda: (form.get("todo")), "onkeyup": handleInput, "style": "border: 1px solid black;"}, None),
+                    h(None, "button", {}, "Add"),
+                ]),
+                h(None, "div", None, comp(state))
+            ])
+
+        def ObjectComp4(props):
+            state = rpy.useState("obj4", [])
+            form = rpy.useState("form4", {
+                "todo": ""
+            })
+
+            comp = lambda state: list(map(lambda x: h(None, "p", {}, x), state.get()))
+
+            def handleAdd(e):
+                e.preventDefault()
+                state.set(lambda prev: [*prev, form.get("todo")])
+                form.set({"todo": ""})
+           
+            def remove(prev):
+                x = prev
+                x.remove(form.get("todo"))
+                return x
+
+            def handleRemove(e):
+                e.preventDefault()
+                state.set(remove)
+                form.set({"todo": ""})
+
+            def handleInput(e):
+                form.set({e.target.name: e.target.value})
+
+            return h(None, "div", {"style": "padding: 1rem; border: 1px solid black; margin: 1rem;"}, [
+                h(None, "h1", None, "Removing elements"),
+                h(None, "form", {}, [
+                    h(None, "input", {"name":"todo", "value": lambda: (form.get("todo")), "onkeyup": handleInput, "style": "border: 1px solid black;"}, None),
+                    h(None, "button", {"onclick": handleAdd}, "Add"),
+                    h(None, "button", {"onclick": handleRemove}, "Remove"),
+                ]),
+                h(None, "div", None, comp(state))
+            ])
+
+        def App():
+            return rpy.createPieElement(None, "div", {"id": "app"}, [
+                rpy.createPieElement(None, "h1", None, "ReactPy Project"),
+                rpy.createPieElement(None, ObjectComp, None, None),
+                rpy.createPieElement(None, ObjectComp2, None, None),
+                rpy.createPieElement(None, ObjectComp3, None, None),
+                rpy.createPieElement(None, ObjectComp4, None, None),
+            ])
+
+        def Render():
+            root = document.getElementById("root")
+            rpy.render(App, root)
+
+        Render()
+
+    </py-script>
+</html>
