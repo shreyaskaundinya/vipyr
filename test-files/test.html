@@ -66,27 +66,39 @@
         def Content(props):
             inp = rpy.useState("inp", "")
             
-            def lmao(e):
-                console.log(e)
-                alert("LMAO")
+            def handleClick(e):
+                alert("HELLO WORLD")
 
             def handleInput(e):
-                e.preventDefault()
-                e.stopPropagation()
-                console.log("CALLING HANDLE INPUT")
                 inp.set(e.target.value)
 
-            return h(None,"div", None, [
-                h(None,"p", {
-                    "style": "border: 1px solid black; padding: 0.3rem 1rem; ",
-                    "onclick":lmao
-                }, inp.get),
-                h(None,"input", {"type": "text", "onkeyup": handleInput, "value": inp.get, "style":"border: 1px solid black;"}, None)
+            return rpy.createPieElement(None,"div", None, [
+                rpy.createPieElement(
+                    None,
+                    "p", 
+                    {
+                        "style": "border: 1px solid black; padding: 0.3rem 1rem; margin: 1rem; border-radius: 10px; width: max-content;",
+                        "onclick": handleClick
+                    }, 
+                    inp.get
+                ),
+                rpy.createPieElement(
+                    None,
+                    "input", 
+                    {
+                        "type": "text", 
+                        "onkeyup": handleInput, 
+                        "value": inp.get, 
+                        "style":"border: 1px solid black; margin: 1rem;",
+                    }, 
+                    None
+                )
             ])
 
         def App():
-            return h(None, "div", {"id": "app"}, [
-                h(None, Content, None, None),
+            return rpy.createPieElement(None, "div", {"id": "app"}, [
+                rpy.createPieElement(None, "h1", None, "ReactPy Project"),
+                rpy.createPieElement(None, Content, None, None),
             ])
 
         def Render():

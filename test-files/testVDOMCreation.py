@@ -1,4 +1,5 @@
 from datetime import datetime
+import sys
 
 class PieElement():
     __slots__=['type','props','state','key','children']
@@ -141,8 +142,10 @@ def createDictTree():
         ])
     ])
 
+test_iterations = int(sys.argv[1])
+
 start = datetime.now()
-for i in range(0, 10000):
+for i in range(0, test_iterations):
     createTree() 
 end = datetime.now()
 
@@ -150,7 +153,7 @@ print(end, start, end-start)
 
 
 start = datetime.now()
-for i in range(0, 10000):
+for i in range(0, test_iterations):
     createDictTree() 
 end = datetime.now()
 
