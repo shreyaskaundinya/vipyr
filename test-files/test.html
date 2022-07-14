@@ -63,15 +63,35 @@
                 ])
             ])
 
+
         def Content(props):
-            inp = rpy.useState("inp", "")
+            inp = rpy.useState("inp", "1")
+            load = rpy.useState("load", "")
+            put= rpy.useState("put",True)
             
             def handleClick(e):
                 alert("HELLO WORLD")
 
             def handleInput(e):
-                inp.set(e.target.value)
-
+                if e.target.value != "":
+                    inp.set(e.target.value)
+        
+            def invertPut(e):
+                put.set(not put.get())
+                console.log(put.get())
+            
+            def loadImage():
+                if put.get():
+                    return rpy.createPieElement(None,"img",{"src":"test.png"},None)
+                else:
+                    return None
+            
+            def pasteImage(e):
+                #load.set("test.png")
+                image=document.createElement("img")
+                image.setAttribute("src","test.png")
+                document.getElementById("app").appendChild(image)
+            
             return rpy.createPieElement(None,"div", None, [
                 rpy.createPieElement(
                     None,
@@ -80,7 +100,7 @@
                         "style": "border: 1px solid black; padding: 0.3rem 1rem; margin: 1rem; border-radius: 10px; width: max-content;",
                         "onclick": handleClick
                     }, 
-                    inp.get
+                    f"Value of inp is: {inp.get()}"
                 ),
                 rpy.createPieElement(
                     None,
@@ -88,13 +108,34 @@
                     {
                         "type": "text", 
                         "onkeyup": handleInput, 
-                        "value": inp.get, 
+                        #"value": "Enter number: ", 
+                        "id": "input",
                         "style":"border: 1px solid black; margin: 1rem;",
-                    }, 
-                    None
-                )
+                    },
+                    None),
+                    rpy.createPieElement(
+                        None,
+                        "div",
+                        None,
+                        [rpy.createPieElement("None","p",None,f"Hello there {i}!") for i in range(int(inp.get()))] 
+                    )
+                ,
+                rpy.createPieElement(
+                    None,
+                    "button",
+                    {
+                        "onclick": invertPut,
+                    },
+                    "Click me for a surprise!"
+                ),
+                loadImage()
             ])
-
+            """
+            #rpy.createPieElement(None,"img",{"src":"test.png"},None) if put.get() else rpy.createPieElement(None,"p",None, "lol hehe")
+            1) Lambda function not working
+            2) If changes are directly made to the DOM, how does VDOM get to know about those changes and update?
+            3) Function when passed inside list not working(if none is returned by function)
+            """
         def App():
             return rpy.createPieElement(None, "div", {"id": "app"}, [
                 rpy.createPieElement(None, "h1", None, "ReactPy Project"),
