@@ -166,7 +166,12 @@
             ])
         
         def TestComp(n):
-          return rpy.createPieElement(None, "p", {}, f"hello world {n}")
+          return rpy.createPieElement(None, "p", {
+            "style": "border: 1px solid black;",
+            "id": str(n),
+            "data-x": str(n) + "_p_tag",
+            "data-aria": str(n)
+          }, f"hello world {n}")
           
         def TestCompWrapper(props):
             view = rpy.useState("view", False)
@@ -187,7 +192,7 @@
                         },
                         "Click to toggle view"
                     ),
-                    rpy.createPieElement(None, "div", None, [TestComp(i) for i in range(0,100000)]) if view.get() else rpy.createPieElement(None, "p", None, "nm")                
+                    rpy.createPieElement(None, "div", None, [TestComp(i) for i in range(0,5000)]) if view.get() else rpy.createPieElement(None, "p", None, "nm")                
                 ]
             )
                     
