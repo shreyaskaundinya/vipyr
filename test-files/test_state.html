@@ -164,7 +164,33 @@
                 ]),
                 h(None, "div", None, comp(state))
             ])
+        
+        def TestComp(n):
+          return rpy.createPieElement(None, "p", {}, f"hello world {n}")
+          
+        def TestCompWrapper(props):
+            view = rpy.useState("view", False)
+            
+            def handleToggle(e):
+                view.set(not view.get())
 
+            return rpy.createPieElement(
+                None,
+                "div",
+                {},
+                [
+                    rpy.createPieElement(
+                        None,
+                        "button",
+                        {
+                            "onclick": handleToggle
+                        },
+                        "Click to toggle view"
+                    ),
+                    rpy.createPieElement(None, "div", None, [TestComp(i) for i in range(0,100000)]) if view.get() else rpy.createPieElement(None, "p", None, "nm")                
+                ]
+            )
+                    
         def App():
             return rpy.createPieElement(None, "div", {"id": "app"}, [
                 rpy.createPieElement(None, "h1", None, "ReactPy Project"),
@@ -172,6 +198,7 @@
                 rpy.createPieElement(None, ObjectComp2, None, None),
                 rpy.createPieElement(None, ObjectComp3, None, None),
                 rpy.createPieElement(None, ObjectComp4, None, None),
+                rpy.createPieElement(None, TestCompWrapper, None, None),
             ])
 
         def Render():
