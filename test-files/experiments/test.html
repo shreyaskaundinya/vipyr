@@ -107,28 +107,24 @@
                     "input", 
                     {
                         "type": "text", 
-                        "onkeyup": handleInput, 
+                        "onchange": handleInput,
                         #"value": "Enter number: ", 
                         "id": "input",
                         "style":"border: 1px solid black; margin: 1rem;",
                     },
                     None),
+                *[rpy.createPieElement("None","p",None,f"Hello there {i}!") for i in range(int(inp.get()))],
+                rpy.createPieElement(None, "div", None, [
                     rpy.createPieElement(
                         None,
-                        "div",
-                        None,
-                        [rpy.createPieElement("None","p",None,f"Hello there {i}!") for i in range(int(inp.get()))] 
-                    )
-                ,
-                rpy.createPieElement(
-                    None,
-                    "button",
-                    {
-                        "onclick": invertPut,
-                    },
-                    "Click me for a surprise!"
-                ),
-                loadImage()
+                        "button",
+                        {
+                            "onclick": invertPut,
+                        },
+                        "Click me for a surprise!"
+                    ),
+                    loadImage()
+                ])
             ])
             """
             #rpy.createPieElement(None,"img",{"src":"test.png"},None) if put.get() else rpy.createPieElement(None,"p",None, "lol hehe")
