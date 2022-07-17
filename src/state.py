@@ -26,19 +26,28 @@ class State:
                     - value update (immutable)
                     - array
         """
-        
+        # TODO : Check the need for a deepcopy and the performance 
         # if action is a function
         if hasattr(action, "__call__"):
-            self.state = action(deepcopy(self.state))
+            update = action(deepcopy(self.state))
+            # TODO : test this
+            # Skip calling rerender event if update remains same as current state
+            if (type(self.state) == type(update) and self.state == update):
+                return
+            else:
+                self.state = update
         
         # if action is a dictionary
         elif type(action) is dict and type(self.state) is dict:
             for key in action.keys():
                 self.state[key] = action[key]
         else:
+            # TODO : test this
+            # Skip calling rerender event if update remains same as current state
+            if self.state == action:
+                return
             self.state = action
 
-        # console.log("called set with", self.state)
         self.dispatcher()
 
     def get(self, key = None):
