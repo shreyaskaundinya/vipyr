@@ -119,13 +119,15 @@ def test():
     end = datetime.now()
 
     print("SET METHOD :", str(end - start))
-
+    print(changes, "\n")
+    
     start = datetime.now()
     for i in range(0, TEST_RUNS):
         hasChanged, changes = iter_method(oldElem, newElem)
     end = datetime.now()
     
     print("ITER METHOD :", str(end - start))
+    print(changes, "\n")
 
     start = datetime.now()
     for i in range(0, TEST_RUNS):
@@ -133,6 +135,7 @@ def test():
     end = datetime.now()
     
     print("FILTER METHOD :", str(end - start))
+    print(changes, "\n")
 
     start = datetime.now()
     for i in range(0, TEST_RUNS):
@@ -140,5 +143,6 @@ def test():
     end = datetime.now()
     
     print("COMPRE METHOD :", str(end - start))
+    print(changes, "\n")
 
 test()

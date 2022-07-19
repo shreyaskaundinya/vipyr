@@ -1,3 +1,4 @@
+from json import dumps
 from js import document, console
 from pyodide import create_proxy, to_js
 
@@ -29,19 +30,28 @@ class State:
                     - value update (immutable)
                     - array
         """
-        
+        # TODO : Check the need for a deepcopy and the performance 
         # if action is a function
         if hasattr(action, "__call__"):
-            self.state = action(deepcopy(self.state))
+            update = action(deepcopy(self.state))
+            # TODO : test this
+            # Skip calling rerender event if update remains same as current state
+            if (type(self.state) == type(update) and self.state == update):
+                return
+            else:
+                self.state = update
         
         # if action is a dictionary
         elif type(action) is dict and type(self.state) is dict:
             for key in action.keys():
                 self.state[key] = action[key]
         else:
+            # TODO : test this
+            # Skip calling rerender event if update remains same as current state
+            if self.state == action:
+                return
             self.state = action
 
-        # console.log("called set with", self.state)
         self.dispatcher()
 
     def get(self, key = None):
@@ -53,70 +63,26 @@ class State:
         
         return deepcopy(self.state)
 
-
-CREATE = "CREATE"
-REMOVE = "REMOVE"
-REPLACE = "REPLACE"
-UPDATE = "UPDATE"
+# from event_consts import CREATE,REMOVE,REPLACE,UPDATE
 from datetime import datetime
+from hashlib import blake2b
 
 class Pie():
-    """
-    Element : 
-        - type
-        - props
-        - state
-        - children
-
-    Tree : 
-
-        {
-            type: "div", 
-            props: {}, 
-            state: {}, 
-            children: [
-                {
-                    type: "h1", 
-                    props: {}, 
-                    state: {}, 
-                    children: "Hello world"
-                },
-                {
-                    type: "div", 
-                    props: {}, 
-                    state: {}, 
-                    children: [
-                        {
-                            type: "p", 
-                            props: {}, 
-                            state: {}, 
-                            children: "p1"
-                        },
-                        {
-                            type: "p", 
-                            props: {}, 
-                            state: {}, 
-                            children: "p2"
-                        },
-                        {
-                            type: "p", 
-                            props: {}, 
-                            state: {}, 
-                            children: "p3"
-                        },
-                    ]
-                }
-            ]
-        }
-    """
-
     def __init__(self):
         self.currVDOM = None 
-        self.prevVDOM = None    #check if both currVDOM and prevVDOM needed
+        self.prevVDOM = None
+        
+        # stores the element to be rendered into the root element
         self.renderElement = None 
-        self.root = None    #variable to store root DOM element
+
+        # stores root DOM element
+        self.root = None    
+        
+        # global store of states
         self.store = {}
-        #self.proxies={}
+
+        # TODO : Remove clear of console
+        # clear the pyscript logs
         console.clear()
 
     def dispatchEvent(self):
@@ -124,32 +90,41 @@ class Pie():
         # create new VDOM
         self.prevVDOM=self.currVDOM
         self.currVDOM=self.renderElement()
+        end = datetime.now()
+        console.log("CREATION OF DOM TOOK: ", to_js(str(end-start)))
 
         # rerender whole tree
         #self.root.removeChild(self.root.firstElementChild)
         #self.root.appendChild(self.createElement(self.currVDOM))
 
-        # reconciliation
+        start = datetime.now()
         self.reconcile(None, self.root.firstChild, self.prevVDOM, self.currVDOM)
-        
         end = datetime.now()
-
         console.log("RECONCILATION TOOK : ", to_js(str(end-start)))
+        
 
-    def useState(self, name, initialState = None):
+    def useState(self, key, initialState = None):
+        """
+            Pseudo-Hook
+            Function to create state instance for a particular key
+            or return an existing state for that key
+        """
         # if state already return it, else create the new state
         try:
-            return self.store[name]
+            return self.store[key]
         except:
-            self.store[name] = State(initialState, self.dispatchEvent)
-            return self.store[name]
+            self.store[key] = State(initialState, self.dispatchEvent)
+            return self.store[key]
     
-
-    def compareTag(self, oldElem, newElem):
-        return (oldElem and newElem and oldElem["type"] != newElem["type"])
-
     def isFunc(self, item):
         return hasattr(item, "__call__")
+
+    def compareTag(self, oldElem, newElem):
+        """
+            Function that compares the type of an old VDOM element and new VDOM element
+        """
+        return (oldElem and newElem and oldElem["type"] != newElem["type"])
+
 
     def compareProps(self, oldElem, newElem, DOM):
         """
@@ -188,28 +163,11 @@ class Pie():
 
         elif newElem["props"] == None and oldElem["props"] == None:
             return False, changes
-        else :            
+        else :
+            # TODO : Try making the props diff faster
             # props in new not in old => create
             # props in old not in new => remove
             # props in old and new but changed => change
-            
-            # SET APPROACH
-            """old_props_keys = set(oldElem["props"].keys())
-            new_props_keys = set(newElem["props"].keys())
-
-            changes["create"] = old_props_keys.difference(new_props_keys)
-            changes["remove"] = new_props_keys.difference(old_props_keys)
-
-            changes["create"].update(set(
-                filter(
-                    lambda x: newElem["props"][x] != oldElem["props"][x], 
-                    new_props_keys.intersection(old_props_keys)
-                )
-            ))
-
-            if (len(changes["create"]) > 0 or len(changes["remove"]) > 0):
-                hasChanged = True"""
-
 
             # ITERATIVE APPROACH
             for newProp in newElem["props"].keys():
@@ -234,24 +192,21 @@ class Pie():
     
         return hasChanged, changes
 
-    def compareKey(self, oldElem, newElem):
-        return (oldElem["key"] != newElem["key"])
-
     def reconcile(self, parentDOM, DOM, oldElem = None, newElem = None):
-        ##
-        if oldElem == None and newElem == None: #needed to end reconciliation
-            console.log("RENDER CASE : oldElem none, newElem none")
+        if oldElem == None and newElem == None: 
+            # needed to end reconciliation
+            # console.log("RENDER CASE : oldElem none, newElem none")
             return
         
         if oldElem == None:
             # create
-            console.log("RENDER CASE : oldElem none, newElem exists")
+            # console.log("RENDER CASE : oldElem none, newElem exists")
             parentDOM.appendChild(self.createElement(newElem))
             return
 
         if newElem == None:
             # remove
-            console.log("RENDER CASE : oldElem exists, newElem none")
+            # console.log("RENDER CASE : oldElem exists, newElem none")
             parentDOM.removeChild(DOM)
             return
 
@@ -277,185 +232,173 @@ class Pie():
             parentDOM.removeChild(DOM)
             parentDOM.appendChild(document.createElement(newElem))
             return
+        
+        # --------------------------------------------------
 
-        # if two tags are different, rerender the whole subtree
-        if self.compareTag(oldElem, newElem):
-            #remove child
-            console.log("RENDER CASE : Tags are different")
-            parentDOM.removeChild(DOM)
-            #create and append child
-            parentDOM.appendChild(self.createElement(newElem))
+        if oldElem["hashed_key"] != newElem["hashed_key"]:
+            # if two tags are different, rerender the whole subtree
+            if self.compareTag(oldElem, newElem):
+                # replace the current child in place
+                # console.log("RENDER CASE : Tags are different")
+                parentDOM.replaceChild(self.createElement(newElem), DOM)
+                return
+
+            else:
+                # if props are different, make necessary changes to the DOM node
+                propsHaveChanged, propChanges = self.compareProps(oldElem, newElem, DOM)
+                if propsHaveChanged:
+                    for key in propChanges["create"]:    # create and change props
+                        # handle event listeners
+                        if key[0:2] == "on":
+                            # remove previous listener
+                            DOM.removeEventListener(key[2:], oldElem['props'][key])
+                            # create proxy of event handler
+                            newElem['props'][key] = create_proxy(newElem['props'][key])
+                            # add new event listener
+                            DOM.addEventListener(key[2:], newElem['props'][key])
+
+                        # if the value of a prop is a func, call it
+                        elif hasattr(newElem['props'][key], "__call__"):
+                            if key == "value":##
+                                DOM.value=newElem['props'][key]()
+                            else:
+                                DOM.setAttribute(key, newElem['props'][key]())
+                        else :
+                            # TODO : Find more cases that need to be isolated
+                            if key == "value":
+                                DOM.value=newElem['props'][key]
+                            else:
+                                DOM.setAttribute(key, newElem['props'][key])
+
+                    for key in propChanges["remove"]:
+                        DOM.removeAttribute(key)
+        
+        """
+        --- CHILDREN ------------------------------------------------------------
+
+        Cases :
+            1. Old is no children, New has no children
+            2. Old has no children, New has children
+            3. Old has children, New has no children
+            1. Old and new have same number of children
+                - no changes in children
+                - changes in children
+            2. Old has more children
+                - remove excess children
+            3. New has more children
+                - add additional children
+                    - text node
+                    - element node
+        """
+
+        if newElem["children"] == None:
+            # remove all
+            for child in DOM.children:
+                DOM.removeChild(child)
+            return
+        
+        if oldElem["children"] == None:
+            # append all
+            for child in newElem["children"]:
+                if type(child) is str:
+                    DOM.appendChild(document.createTextNode(child))
+                DOM.appendChild(self.createElement(child))
+            return
+                
+        if type(oldElem["children"]) is str or type(newElem["children"]) is str:
+            self.reconcile(DOM, DOM.firstChild, oldElem["children"], newElem["children"])
             return
 
-        else:
-            # --------------------------------------------------
+        if hasattr(newElem['children'], "__call__"): 
+            # allow arguments without calling function
+            # assumes a function call returns a string
+            for i in DOM.children:
+                DOM.removeChild(i)
+            DOM.innerText = ""
+            func_return_val = newElem['children']()
+            if type(func_return_val) is str:
+                DOM.appendChild(document.createTextNode(func_return_val))
+            else:
+                DOM.appendChild(self.createElement(func_return_val))
+            return
             
-            # if props are different, make necessary changes to the DOM node
-            propsHaveChanged, propChanges = self.compareProps(oldElem, newElem, DOM)
-            if propsHaveChanged:
-                for key in propChanges["create"]:    #create and change props
-                    # console.log(newElem["type"], key)
-                    if key[0:2] == "on":
-                        DOM.removeEventListener(key[2:], oldElem['props'][key])
-                        newElem['props'][key] = create_proxy(newElem['props'][key])
-                        DOM.addEventListener(key[2:], newElem['props'][key])
-                        pass
-                    elif hasattr(newElem['props'][key], "__call__"):
-                        if key == "value":##
-                            DOM.value=newElem['props'][key]()
-                        else:
-                            DOM.setAttribute(key, newElem['props'][key]())
-                    else :
-                        if key == "value":##
-                            DOM.value=newElem['props'][key]
-                        else:
-                            DOM.setAttribute(key, newElem['props'][key])
 
-                for key in propChanges["remove"]:
-                    DOM.removeAttribute(key)
+        # --------------------------------------------------
+        # TODO : Try hashing leaf nodes [children => str, None] with the children to avoid recalling reconcile
 
-            # --------------------------------------------------
+        len_old = len(oldElem['children'])
+        len_new = len(newElem['children'])
 
-            """
-            Cases :
-                1. Old is no children, New has no children
-                2. Old has no children, New has children
-                3. Old has children, New has no children
-                1. Old and new have same number of children
-                    - no changes in children
-                    - changes in children
-                2. Old has more children
-                    - remove excess children
-                3. New has more children
-                    - add additional children
-                        - text node
-                        - element node
-            """
-
-            if newElem["children"] == None:
-                # remove all
-                for child in DOM.children:
-                    DOM.removeChild(child)
-                return
-            
-            if oldElem["children"] == None:
-                # append all
-                for child in newElem["children"]:
-                    if type(child) is str:
-                        DOM.appendChild(document.createTextNode(child))
-                    DOM.appendChild(self.createElement(child))
-                return
-                    
-            if type(oldElem["children"]) is str or type(newElem["children"]) is str:
-                self.reconcile(DOM, DOM.firstChild, oldElem["children"], newElem["children"])
-                return
-
-            if hasattr(newElem['children'], "__call__"): #allow arguments without calling function
-                # assumes a function call returns a string
-                for i in DOM.children:
-                    DOM.removeChild(i)
-                DOM.innerText = ""
-                func_return_val=newElem['children']()
-                if type(func_return_val) is str:
-                    DOM.appendChild(document.createTextNode(func_return_val))
+        # Old VDOM element and New VDOM element has same number of children
+        if len_old == len_new:
+            #console.log('RENDER CASE : Same number of children')
+            for i in range(len_old):
+                oldEl = oldElem['children'][i]
+                newEl = newElem['children'][i]
+                # oldEl func, newEl func => None, pieElement, str
+                if self.isFunc(oldEl):
+                    oldEl = oldEl()
+                if self.isFunc(newEl):
+                    newEl = newEl()
+                # console.log(to_js(oldEl),to_js(newEl))
+                if oldEl == None: 
+                    domEl = None
                 else:
-                    DOM.appendChild(self.createElement(func_return_val))
-                return
-                
-
-            # --------------------------------------------------
-
-            len_old = len(oldElem['children'])
-            len_new = len(newElem['children'])
-
-            if len_old == len_new:
-                console.log('RENDER CASE : Same number of children')
-                console.log(DOM.children,newElem['children'],oldElem['children'])
-                for i in range(len_old):
+                    domEl = DOM.children[i]
+                self.reconcile(DOM, domEl, oldEl, newEl)
+                    
+        else:     
+            # Old VDOM Element has more number of children
+            if len_old > len_new:
+                # console.log('RENDER CASE : Old has more children')
+                # reconcile the number of elements which are common
+                for i in range(len_new):
                     oldEl = oldElem['children'][i]
                     newEl = newElem['children'][i]
-                    # oldEl func, newEl func => None, pieElement, str
-                    if self.isFunc(oldEl):
-                        oldEl = oldEl()
-                    if self.isFunc(newEl):
-                        newEl = newEl()
-                    # console.log(to_js(oldEl),to_js(newEl))
+
                     if oldEl == None: 
                         domEl = None
                     else:
                         domEl = DOM.children[i]
-
+                    
                     self.reconcile(DOM, domEl, oldEl, newEl)
-                        
-            else:     
-                # old element has more number of children
-                if len_old > len_new:
-                    console.log('RENDER CASE : Old has more children')
-                    # console.log(DOM.children,to_js(newElem['children']),to_js(oldElem['children']))
 
-                    for i in range(len_new):
-                        oldEl = oldElem['children'][i]
-                        newEl = newElem['children'][i]
-                        """
-                        #oldEl func, newEl func => None, pieElement, str
-                        if self.isFunc(oldEl):
-                            oldEl = oldEl()
-                        if self.isFunc(newEl):
-                            newEl = newEl()
-                        """
-                        if oldEl == None: 
-                            domEl = None
-                        else:
-                            domEl = DOM.children[i]
-                        self.reconcile(DOM,domEl,oldEl,newEl)
-                           
-                    # remove the excess elements
-                    for i in range(len_new,len_old):
-                        DOM.removeChild(DOM.children[len_new])
 
-                # new has more number of children
-                else:
-                    console.log('RENDER CASE : New has more children')
-                    console.log(DOM.children,newElem['children'],oldElem['children'])
-                    for i in range(len_old):
-                        oldEl = oldElem['children'][i]
-                        newEl = newElem['children'][i]
-                        """
-                        # oldEl func, newEl func => None, pieElement, str
-                        if self.isFunc(oldEl):
-                            oldEl = oldEl()
-                        if self.isFunc(newEl):
-                            newEl = newEl()
-                        """
-                        if oldEl == None: 
-                            domEl = None
-                        else:
-                            domEl = DOM.children[i]
-                        self.reconcile(DOM,domEl,oldEl,newEl)
+                # remove the excess elements
+                for i in range(len_new, len_old):
+                    DOM.removeChild(DOM.children[len_new])
 
-                    # add new elements
-                    for i in range(len_old,len_new):
-                        if type(newElem['children'][i]) is str:
-                            DOM.appendChild(document.createTextNode(newElem['children'][i]))
-                        else:
-                            DOM.appendChild(self.createElement(newElem['children'][i]))
+            # New VDOM Element has more number of children
+            else:
+                # console.log('RENDER CASE : New has more children')
+                # reconcile the number of elements which are common
+                for i in range(len_old):
+                    oldEl = oldElem['children'][i]
+                    newEl = newElem['children'][i]
 
-    
-    def patchPieElement(self, parent, oldElement, newElement):
-        """
-        Function to update child
-            - create -> adding a new node
-            - remove -> remove the node
-            - replace -> type changes
-        """
-        pass
+                    if oldEl == None: 
+                        domEl = None
+                    else:
+                        domEl = DOM.children[i]
+                    
+                    self.reconcile(DOM, domEl, oldEl, newEl)
+
+
+                # add new elements
+                for i in range(len_old,len_new):
+                    if type(newElem['children'][i]) is str:
+                        DOM.appendChild(document.createTextNode(newElem['children'][i]))
+                    else:
+                        DOM.appendChild(self.createElement(newElem['children'][i]))
         
     def createPieElement(self, key, tag, props, children):
         """
         Function to create vdom element
         """
         if type(tag) is str:
-            return {'key':key,'type':tag,'props':props,'children':children}
+            # TODO : Fix the function part [maybe use func ref number instead of name]
+            hash_el = {'key':key,'type':tag,'props': [props[k].__name__ if self.isFunc(props[k]) else props[k] for k in props] if props else None}
+            return {"hashed_key" : blake2b(dumps(hash_el).encode()).hexdigest(), **hash_el, "props": props, "children": children}
         else:
             return tag(props)
 
@@ -465,7 +408,6 @@ class Pie():
         """
 
         el = document.createElement(element['type'])
-        # console.log("creating", element["type"])
 
         if element['children'] or element["children"] == "":
             # child is a function
@@ -514,7 +456,7 @@ class Pie():
         return el
 
 
-    def render(self, element, root):    #is it possible to render to appropriate node instead of root?
+    def render(self, element, root):
             """
             Function to handle the render
             """

@@ -150,6 +150,7 @@
             def handleRemove(e):
                 e.preventDefault()
                 state.set(remove)
+                console.log(to_js(state.get()))
                 form.set({"todo": ""})
 
             def handleInput(e):
@@ -165,17 +166,23 @@
                 h(None, "div", None, comp(state))
             ])
         
-        def TestComp(n):
-          return rpy.createPieElement(None, "p", {
-            "style": "border: 1px solid black;",
-            "id": str(n),
-            "data-x": str(n) + "_p_tag",
-            "data-aria": str(n)
-          }, f"hello world {n}")
+        def TestComp(props):
+            
+            return rpy.createPieElement(None, "p", {
+                "style": "border: 1px solid black;",
+                "id": str(props["n"]),
+                "data-x": str(props["n"]) + "_p_tag",
+                "data-aria": str(props["n"])
+            }, f"hello world {props['txt']}")
           
         def TestCompWrapper(props):
+            inp = rpy.useState("input_state", "")
             view = rpy.useState("view", False)
             
+            def handleChange(e):
+                console.log(e.target.value)
+                inp.set(e.target.value)
+
             def handleToggle(e):
                 view.set(not view.get())
 
@@ -186,13 +193,22 @@
                 [
                     rpy.createPieElement(
                         None,
+                        "input",
+                        {
+                            "onkeyup": handleChange,
+                            "value" : inp.get()
+                        },
+                        None
+                    ),
+                    rpy.createPieElement(
+                        None,
                         "button",
                         {
                             "onclick": handleToggle
                         },
                         "Click to toggle view"
                     ),
-                    rpy.createPieElement(None, "div", None, [TestComp(i) for i in range(0,5000)]) if view.get() else rpy.createPieElement(None, "p", None, "nm")                
+                    rpy.createPieElement(None, "div", None, [TestComp({"n": i, "txt": inp.get()}) for i in range(0,5000)]) if view.get() else rpy.createPieElement(None, "p", None, "nm")                
                 ]
             )
                     
