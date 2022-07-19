@@ -396,17 +396,19 @@ class Pie():
                     for i in range(len_new):
                         oldEl = oldElem['children'][i]
                         newEl = newElem['children'][i]
-                        # oldEl func, newEl func => None, pieElement, str
+                        """
+                        #oldEl func, newEl func => None, pieElement, str
                         if self.isFunc(oldEl):
                             oldEl = oldEl()
                         if self.isFunc(newEl):
                             newEl = newEl()
-
+                        """
                         if oldEl == None: 
                             domEl = None
                         else:
                             domEl = DOM.children[i]
-                            
+                        self.reconcile(DOM,domEl,oldEl,newEl)
+                           
                     # remove the excess elements
                     for i in range(len_new,len_old):
                         DOM.removeChild(DOM.children[len_new])
@@ -418,16 +420,18 @@ class Pie():
                     for i in range(len_old):
                         oldEl = oldElem['children'][i]
                         newEl = newElem['children'][i]
+                        """
                         # oldEl func, newEl func => None, pieElement, str
                         if self.isFunc(oldEl):
                             oldEl = oldEl()
                         if self.isFunc(newEl):
                             newEl = newEl()
-
+                        """
                         if oldEl == None: 
                             domEl = None
                         else:
                             domEl = DOM.children[i]
+                        self.reconcile(DOM,domEl,oldEl,newEl)
 
                     # add new elements
                     for i in range(len_old,len_new):
