@@ -9,7 +9,7 @@
         <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
         <py-env>
             - paths:
-                - ../pkg/pie.py
+                - ../../pkg/pie.py
         </py-env>
     </head>
     <style>
@@ -107,8 +107,8 @@
                     "input", 
                     {
                         "type": "text", 
-                        "onchange": handleInput,
-                        #"value": "Enter number: ", 
+                        "onkeyup": handleInput, 
+                        "value": inp.get, 
                         "id": "input",
                         "style":"border: 1px solid black; margin: 1rem;",
                     },

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+        <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+        <py-env>
+            - paths:
+                - ../../pkg/pie.py
+        </py-env>
+    </head>
+    <style>
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+    </style>
+    <body>
+        <div id="root"></div>
+    </body>
+
+    <py-script>
+        from pie import Pie
+        from js import alert
+
+        rpy = Pie()
+
+        def Comp():
+            inp = rpy.useState("inp", "")
+
+            def f():
+                return lambda : console.log("calling cleanup")
+
+            useEffect(
+                """
+                case1: None 
+                case2: []
+                case3:[state]
+                """
+                f, ["inp"]
+            )
+
+        def App():
+            return rpy.createPieElement(None, "div", {"id": "app"}, [
+                rpy.createPieElement(None, "h1", None, "ReactPy Project"),
+                rpy.createPieElement(None, Comp, None, None),
+            ])
+
+        def Render():
+            root = document.getElementById("root")
+            rpy.render(App, root)
+
+        Render()
+
+    </py-script>
+</html>

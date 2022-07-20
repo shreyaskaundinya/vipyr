@@ -9,7 +9,7 @@
         <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
         <py-env>
             - paths:
-                - ../pkg/pie.py
+                - ../../pkg/pie.py
         </py-env>
     </head>
     <style>
@@ -172,7 +172,8 @@
                 "style": "border: 1px solid black;",
                 "id": str(props["n"]),
                 "data-x": str(props["n"]) + "_p_tag",
-                "data-aria": str(props["n"])
+                "data-aria": str(props["n"]),
+                "xxx": props["data"]
             }, f"hello world {props['txt']}")
           
         def TestCompWrapper(props):
@@ -208,7 +209,7 @@
                         },
                         "Click to toggle view"
                     ),
-                    rpy.createPieElement(None, "div", None, [TestComp({"n": i, "txt": inp.get()}) for i in range(0,5000)]) if view.get() else rpy.createPieElement(None, "p", None, "nm")                
+                    rpy.createPieElement(None, "div", None, [TestComp({"n": i, "txt": i, "data": inp.get()}) for i in range(0,5000)]) if view.get() else rpy.createPieElement(None, "p", None, "nm")                
                 ]
             )
                     
