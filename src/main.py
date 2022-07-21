@@ -231,9 +231,9 @@ class Pie():
                 DOM.appendChild(self.createElement(child))
             return
         
-        if type(oldElem["children"]) is str or type(newElem["children"]) is str:
+        if type(oldElem['children']) is str or type(newElem['children']) is str:
             if (oldElem['hashed_children'] != newElem['hashed_children']):
-                self.reconcile(DOM, DOM.firstChild, oldElem["children"], newElem["children"])
+                self.reconcile(DOM, DOM.firstChild, oldElem['children'], newElem['children'])
             return
 
         if hasattr(newElem['children'], '__call__'): 

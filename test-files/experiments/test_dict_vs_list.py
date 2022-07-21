@@ -8,7 +8,7 @@ def test():
         d[i] = i
 
     for i in range(0, 10000):
-        l.append({"key": i, "children": i})
+        l.append({'key': i, 'children': i})
 
     start = datetime.now()
     
@@ -16,15 +16,15 @@ def test():
         x = d.keys()
     
     end = datetime.now()
-    print("dict keys took : ", end-start)
+    print('dict keys took : ', end-start)
 
 
     start = datetime.now()
     
     for i in range(0, 10000):
-        x = [i["key"] for i in l]
+        x = [i['key'] for i in l]
     
     end = datetime.now()
-    print("list compre took : ", end-start)
+    print('list compre took : ', end-start)
 
 test()
