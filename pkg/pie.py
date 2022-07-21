@@ -81,6 +81,9 @@ class Pie():
         # global store of states
         self.store = {}
 
+        # usEffect used by component?
+        self.effects = {"Component1":{"Effect1":{"dependency array":[],"callback":(),"cleanup":()},"Stage":"Mounted"}}
+
         # TODO : Remove clear of console
         # clear the pyscript logs
         console.clear()
@@ -91,7 +94,7 @@ class Pie():
         self.prevVDOM=self.currVDOM
         self.currVDOM=self.renderElement()
         end = datetime.now()
-        console.log('CREATION OF DOM TOOK: ', to_js(str(end-start)))
+        console.log('CREATION OF VDOM TOOK: ', to_js(str(end-start)))
 
         # rerender whole tree
         #self.root.removeChild(self.root.firstElementChild)
@@ -102,6 +105,12 @@ class Pie():
         end = datetime.now()
         console.log('RECONCILATION TOOK : ', to_js(str(end-start)))
         
+        '''
+        Get to know which component is updated, find the corresponding effects.
+        '''
+        '''
+        TODO Find which component is being updated in useState
+        '''
 
     def useState(self, key, initialState = None):
         '''
@@ -115,6 +124,26 @@ class Pie():
         except:
             self.store[key] = State(initialState, self.dispatchEvent)
             return self.store[key]
+
+    def useEffect(self, component, effect, dependency = None):
+        '''
+        Cases:
+        1) Dependency is none: have to call effect during initial render(component mount-are both the same?), and cleanup during unmount
+        2) Dependency is []: have to call effect during initial render and one update, and cleanup during unmount
+        3) Dependency is [....]: have to call effect during initial render and every update, and cleanup during unmount
+
+        - Mounting of a component occurs only once
+        - Updation happens during state change
+        - When does unmounting of a component occur?
+        - How are the dependency values updated?
+        - Every time we are re-creating VDOM useEffect will be called
+        '''
+        if self.effects.get(component) == None:
+            self.effects[component][str(effect)]={'dependency':dependency, 'callback': effect, 'cleanup': None,'stage': 'mount'}
+        else:
+            if self.effects[component].get(str(effect)) == None:
+                self.effects[component][effect]=sdffghh
+        return
     
     def isFunc(self, item):
         return hasattr(item, '__call__')
@@ -446,4 +475,6 @@ class Pie():
             self.renderElement = element
             self.root = root
             self.currVDOM = self.renderElement()
-            root.appendChild(self.createElement(self.currVDOM)) 
+            root.appendChild(self.createElement(self.currVDOM))
+            # TODO include useEffect()
+

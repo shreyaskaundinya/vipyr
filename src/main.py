@@ -20,6 +20,10 @@ class Pie():
         # global store of states
         self.store = {}
 
+        # global dictionary of effects
+        # Prototype: {"Component1":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":()},.....},"stage":"Mounted"},........}
+        self.effects={}
+
         # TODO : Remove clear of console
         # clear the pyscript logs
         console.clear()
@@ -30,7 +34,7 @@ class Pie():
         self.prevVDOM=self.currVDOM
         self.currVDOM=self.renderElement()
         end = datetime.now()
-        console.log('CREATION OF DOM TOOK: ', to_js(str(end-start)))
+        console.log('CREATION OF VDOM TOOK: ', to_js(str(end-start)))
 
         # rerender whole tree
         #self.root.removeChild(self.root.firstElementChild)
@@ -41,6 +45,11 @@ class Pie():
         end = datetime.now()
         console.log('RECONCILATION TOOK : ', to_js(str(end-start)))
         
+        '''
+        TODO
+        Get to know which component is updated, go through corresponding effects and see which ones need to be called.
+        Also need to know which components get unmounted, and call cleanup accordingly
+        '''
 
     def useState(self, key, initialState = None):
         '''
@@ -54,7 +63,33 @@ class Pie():
         except:
             self.store[key] = State(initialState, self.dispatchEvent)
             return self.store[key]
-    
+
+    def useEffect(self, component, effect, dependency = None):
+        '''
+        Cases:
+        1) Dependency is none: have to call effect during initial render(component mount-are both the same?) and every update, and cleanup during unmount
+        2) Dependency is []: have to call effect during initial render and one update(dependency doesn't change), and cleanup during unmount
+        3) Dependency is [....]: have to call effect during initial render and on updates where dependecies change, and cleanup during unmount
+        Note: Cleanup is called before calling the effect once again, i.e, on every update
+        - Mounting of a component occurs only once
+        - Updation happens during state change
+        - When does unmounting of a component occur?
+        - How are the dependency values updated?
+        - Every time we are re-creating VDOM useEffect will be called
+        '''
+        effect_name=effect.__name__ # CHECK what if effect is not a function?
+        # Component is getting mounted
+        if self.effects.get(component) == None or self.effects[component].get(effect_name) == None: # OPTIMIZE 
+            self.effects[component][effect_name]={'old_dep':dependency, 'new_dep': dependency, 'effect': effect, 'cleanup': None}
+            self.effects[component]['stage']='mount'
+        # Component is getting updated
+        # BUG abcuhjh
+        else:
+            self.effects[component][effect_name]['old_dep']=self.effects[component][effect_name]['new_dep']
+            self.effects[component][effect_name]['new_dep']=dependency
+            self.effects[component]['stage']='update'
+        return
+
     def isFunc(self, item):
         return hasattr(item, '__call__')
 
@@ -385,4 +420,9 @@ class Pie():
             self.renderElement = element
             self.root = root
             self.currVDOM = self.renderElement()
-            root.appendChild(self.createElement(self.currVDOM)) 
+            root.appendChild(self.createElement(self.currVDOM))
+
+            # Calling all effects of all components irrespective of dependecies
+            for component in self.effects.keys():
+                for effect_name in self.effects[component].keys():
+                    self.effects[component][effect_name]['cleanup']=self.effects[component][effect_name]['effect']()
