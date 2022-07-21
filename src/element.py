@@ -9,8 +9,8 @@ class PieElement():
         self.children=children
 
     def __str__(self):
-        print(f"Type: {self.type}")
-        print(f"Props: {self.props}")
-        print(f"State: {self.state}")
-        print(f"Number of children: {len(self.children)}")
+        print(f'Type: {self.type}')
+        print(f'Props: {self.props}')
+        print(f'State: {self.state}')
+        print(f'Number of children: {len(self.children)}')
 

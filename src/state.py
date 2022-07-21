@@ -28,7 +28,7 @@ class State:
         """
         # TODO : Check the need for a deepcopy and the performance 
         # if action is a function
-        if hasattr(action, "__call__"):
+        if hasattr(action, '__call__'):
             update = action(deepcopy(self.state))
             # TODO : test this
             # Skip calling rerender event if update remains same as current state
