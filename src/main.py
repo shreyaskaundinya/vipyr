@@ -24,15 +24,19 @@ class Pie():
         # Prototype: {"Component1":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":()},.....},"stage":"Mounted"},........}
         self.effects={}
 
+        self.VDOM_currentComponent = None
+
         # TODO : Remove clear of console
         # clear the pyscript logs
         console.clear()
 
-    def dispatchEvent(self):
+    def dispatchReconcile(self):
         start = datetime.now()
+
         # create new VDOM
         self.prevVDOM=self.currVDOM
         self.currVDOM=self.renderElement()
+        
         end = datetime.now()
         console.log('CREATION OF VDOM TOOK: ', to_js(str(end-start)))
 
@@ -53,7 +57,7 @@ class Pie():
 
     def useState(self, key, initialState = None):
         '''
-            Pseudo-Hook
+            Pseudo-Hook2
             Function to create state instance for a particular key
             or return an existing state for that key
         '''
@@ -61,7 +65,7 @@ class Pie():
         try:
             return self.store[key]
         except:
-            self.store[key] = State(initialState, self.dispatchEvent)
+            self.store[key] = State(initialState, self.dispatchReconcile)
             return self.store[key]
 
     def useEffect(self, component, effect, dependency = None):
@@ -77,13 +81,17 @@ class Pie():
         - How are the dependency values updated?
         - Every time we are re-creating VDOM useEffect will be called
         '''
-        effect_name=effect.__name__ # CHECK what if effect is not a function?
+        if effect == None:
+            raise Exception("Error : Effect cannot be None")
+        if component == None:
+            raise Exception("Error : Component cannot be None")
+
+        effect_name=effect.__name__
         # Component is getting mounted
-        if self.effects.get(component) == None or self.effects[component].get(effect_name) == None: # OPTIMIZE 
+        if self.effects.get(component) == None or self.effects[component].get(effect_name) == None:
             self.effects[component][effect_name]={'old_dep':dependency, 'new_dep': dependency, 'effect': effect, 'cleanup': None}
             self.effects[component]['stage']='mount'
         # Component is getting updated
-        # BUG abcuhjh
         else:
             self.effects[component][effect_name]['old_dep']=self.effects[component][effect_name]['new_dep']
             self.effects[component][effect_name]['new_dep']=dependency
@@ -335,20 +343,42 @@ class Pie():
                 else:
                     DOM.appendChild(self.createElement(newElem['children'][i]))
 
+    def constructComponent(self, tag, props):
+        self.VDOM_currentComponent = tag.__name__
+        return tag(props)
         
     def createPieElement(self, key, tag, props, children):
         '''
         Function to create vdom element
         '''
-        if type(tag) is str:
-            # TODO : Fix the function part [maybe use func ref number instead of name]'
+        """
+        App
+            return rpy.createPieElement(None, "div", {"id": "app"}, [
+                rpy.createPieElement(None, "h1", None, "ReactPy Project"),
+                rpy.createPieElement(None, Content, None, None),
+            ])
+        """
+
+        """
+        Call stack:
         
+        CPE p
+        CPE div
+        Content(props)
+        CPE Content
+        CPE h1 
+        CPE div
+        App        
+        """
+        if type(tag) is str:
+            # TODO : Fix the function part [maybe use func ref number instead of name]
+
             hash_el = {
                 'key':key,
                 'type':tag,
-                'props': [props[k].__name__ if self.isFunc(props[k]) else props[k] for k in props] if props else None
+                'props': [props[k].__name__ if self.isFunc(props[k]) else props[k] for k in props] if props else None,
+                'component': self.VDOM_currentComponent
             }
-
             return {
                 'hashed_key' : blake2b(dumps(hash_el).encode()).hexdigest(), 
                 'hashed_children' : blake2b(children.encode()).hexdigest() if type(children) is str else None, 
@@ -357,13 +387,12 @@ class Pie():
                 'children': children
             }
         else:
-            return tag(props)
+            return self.constructComponent(tag, props)
 
     def createElement(self, element):
         '''
         Function to create an actual DOM element from the virtual DOM element
         '''
-
         el = document.createElement(element['type'])
 
         if element['children'] or element['children'] == '':
@@ -414,15 +443,10 @@ class Pie():
 
 
     def render(self, element, root):
-            '''
-            Function to handle the render
-            '''
-            self.renderElement = element
-            self.root = root
-            self.currVDOM = self.renderElement()
-            root.appendChild(self.createElement(self.currVDOM))
-
-            # Calling all effects of all components irrespective of dependecies
-            for component in self.effects.keys():
-                for effect_name in self.effects[component].keys():
-                    self.effects[component][effect_name]['cleanup']=self.effects[component][effect_name]['effect']()
+        '''
+        Function to handle the render
+        '''
+        self.renderElement = element
+        self.root = root
+        
+        self.dispatchReconcile()
