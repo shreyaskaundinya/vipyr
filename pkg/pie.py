@@ -32,7 +32,7 @@ class State:
         """
         # TODO : Check the need for a deepcopy and the performance 
         # if action is a function
-        if hasattr(action, "__call__"):
+        if hasattr(action, '__call__'):
             update = action(deepcopy(self.state))
             # TODO : test this
             # Skip calling rerender event if update remains same as current state
@@ -81,17 +81,25 @@ class Pie():
         # global store of states
         self.store = {}
 
+        # global dictionary of effects
+        # Prototype: {"Component1":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":()},.....},"stage":"Mounted"},........}
+        self.effects={}
+
+        self.VDOM_currentComponent = None
+
         # TODO : Remove clear of console
         # clear the pyscript logs
         console.clear()
 
-    def dispatchEvent(self):
+    def dispatchReconcile(self):
         start = datetime.now()
+
         # create new VDOM
         self.prevVDOM=self.currVDOM
         self.currVDOM=self.renderElement()
+        
         end = datetime.now()
-        console.log('CREATION OF DOM TOOK: ', to_js(str(end-start)))
+        console.log('CREATION OF VDOM TOOK: ', to_js(str(end-start)))
 
         # rerender whole tree
         #self.root.removeChild(self.root.firstElementChild)
@@ -102,10 +110,15 @@ class Pie():
         end = datetime.now()
         console.log('RECONCILATION TOOK : ', to_js(str(end-start)))
         
+        '''
+        TODO
+        Get to know which component is updated, go through corresponding effects and see which ones need to be called.
+        Also need to know which components get unmounted, and call cleanup accordingly
+        '''
 
     def useState(self, key, initialState = None):
         '''
-            Pseudo-Hook
+            Pseudo-Hook2
             Function to create state instance for a particular key
             or return an existing state for that key
         '''
@@ -113,9 +126,39 @@ class Pie():
         try:
             return self.store[key]
         except:
-            self.store[key] = State(initialState, self.dispatchEvent)
+            self.store[key] = State(initialState, self.dispatchReconcile)
             return self.store[key]
-    
+
+    def useEffect(self, component, effect, dependency = None):
+        '''
+        Cases:
+        1) Dependency is none: have to call effect during initial render(component mount-are both the same?) and every update, and cleanup during unmount
+        2) Dependency is []: have to call effect during initial render and one update(dependency doesn't change), and cleanup during unmount
+        3) Dependency is [....]: have to call effect during initial render and on updates where dependecies change, and cleanup during unmount
+        Note: Cleanup is called before calling the effect once again, i.e, on every update
+        - Mounting of a component occurs only once
+        - Updation happens during state change
+        - When does unmounting of a component occur?
+        - How are the dependency values updated?
+        - Every time we are re-creating VDOM useEffect will be called
+        '''
+        if effect == None:
+            raise Exception("Error : Effect cannot be None")
+        if component == None:
+            raise Exception("Error : Component cannot be None")
+
+        effect_name=effect.__name__
+        # Component is getting mounted
+        if self.effects.get(component) == None or self.effects[component].get(effect_name) == None:
+            self.effects[component][effect_name]={'old_dep':dependency, 'new_dep': dependency, 'effect': effect, 'cleanup': None}
+            self.effects[component]['stage']='mount'
+        # Component is getting updated
+        else:
+            self.effects[component][effect_name]['old_dep']=self.effects[component][effect_name]['new_dep']
+            self.effects[component][effect_name]['new_dep']=dependency
+            self.effects[component]['stage']='update'
+        return
+
     def isFunc(self, item):
         return hasattr(item, '__call__')
 
@@ -292,9 +335,9 @@ class Pie():
                 DOM.appendChild(self.createElement(child))
             return
         
-        if type(oldElem["children"]) is str or type(newElem["children"]) is str:
+        if type(oldElem['children']) is str or type(newElem['children']) is str:
             if (oldElem['hashed_children'] != newElem['hashed_children']):
-                self.reconcile(DOM, DOM.firstChild, oldElem["children"], newElem["children"])
+                self.reconcile(DOM, DOM.firstChild, oldElem['children'], newElem['children'])
             return
 
         if hasattr(newElem['children'], '__call__'): 
@@ -361,20 +404,43 @@ class Pie():
                 else:
                     DOM.appendChild(self.createElement(newElem['children'][i]))
 
+    def constructComponent(self, tag, props):
+        self.VDOM_currentComponent = tag.__name__
+        return tag(props)
         
     def createPieElement(self, key, tag, props, children):
         '''
         Function to create vdom element
         '''
+        """
+        App
+            return rpy.createPieElement(None, "div", {"id": "app"}, [
+                rpy.createPieElement(None, "h1", None, "ReactPy Project"),
+                rpy.createPieElement(None, Content, None, None),
+            ])
+        """
+
+        """
+        Call stack:
+        
+        CPE p
+        CPE div
+        Content(props)
+        CPE Content
+        CPE h1 
+        CPE div
+        App        
+        """
         if type(tag) is str:
             # TODO : Fix the function part [maybe use func ref number instead of name]'
         
             hash_el = {
                 'key':key,
                 'type':tag,
-                'props': [props[k].__name__ if self.isFunc(props[k]) else props[k] for k in props] if props else None
+                'props': [props[k].__name__ if self.isFunc(props[k]) else props[k] for k in props] if props else None,
+                'component': self.VDOM_currentComponent
             }
-
+            
             return {
                 'hashed_key' : blake2b(dumps(hash_el).encode()).hexdigest(), 
                 'hashed_children' : blake2b(children.encode()).hexdigest() if type(children) is str else None, 
@@ -383,7 +449,9 @@ class Pie():
                 'children': children
             }
         else:
-            return tag(props)
+            return self.constructComponent(tag, props)
+
+    
 
     def createElement(self, element):
         '''
@@ -440,10 +508,11 @@ class Pie():
 
 
     def render(self, element, root):
-            '''
-            Function to handle the render
-            '''
-            self.renderElement = element
-            self.root = root
-            self.currVDOM = self.renderElement()
-            root.appendChild(self.createElement(self.currVDOM)) 
+        '''
+        Function to handle the render
+        '''
+        self.renderElement = element
+        self.root = root
+        
+        self.dispatchReconcile()
+
