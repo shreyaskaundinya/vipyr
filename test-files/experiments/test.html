@@ -63,7 +63,6 @@
                 ])
             ])
 
-
         def Content(props):
             inp = rpy.useState("inp", "1")
             load = rpy.useState("load", "")
@@ -132,7 +131,7 @@
             2) If changes are directly made to the DOM, how does VDOM get to know about those changes and update?
             3) Function when passed inside list not working(if none is returned by function)
             """
-        def App():
+        def App(props):
             return rpy.createPieElement(None, "div", {"id": "app"}, [
                 rpy.createPieElement(None, "h1", None, "ReactPy Project"),
                 rpy.createPieElement(None, Content, None, None),
@@ -140,7 +139,7 @@
 
         def Render():
             root = document.getElementById("root")
-            rpy.render(App, root)
+            rpy.render(App, props, root)
 
         Render()
 
