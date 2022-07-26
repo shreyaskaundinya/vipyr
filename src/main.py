@@ -67,7 +67,7 @@ class Pie():
         except:
             self.store[key] = State(initialState, self.dispatchReconcile)
             return self.store[key]
-
+            
     def useEffect(self, component, effect, dependency = None):
         '''
         Cases:
@@ -161,6 +161,11 @@ class Pie():
                     hasChanged = True
     
         return hasChanged, changes
+    def compareKeys(self,oldElem,newElem):
+        """"
+        
+        
+        """
 
     def reconcile(self, parentDOM, DOM, oldElem = None, newElem = None):
         if oldElem == None and newElem == None: 
