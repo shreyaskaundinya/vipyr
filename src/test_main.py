@@ -1,11 +1,10 @@
 from json import dumps
-from js import document, console
-from pyodide import create_proxy, to_js
 from state import State
 # from event_consts import CREATE,REMOVE,REPLACE,UPDATE
 from datetime import datetime
-from sys import _getframe as getframe
+# from sys import _getframe as getframe
 from hashlib import blake2b
+from uuid import uuid4 as uuid
 from component import Component
 
 '''
@@ -31,16 +30,15 @@ class Pie():
         '''
         Add key the user gives as value to instanceId key in instance dictionary
         PROTOTYPE:
-        {"Component": 
-            {
-                "123..": {"object":Component123...,effects":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":(),"states":{"State1":state_var1,"State2":stae_var1}},...},
-                "987..": {"object":Component987...,effects":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":(),"states":{"State1":state_var1,"State2":stae_var1}},...},
-                ...
-            },
+        {
+            "123..": {"object":Component123...,effects":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":(),"states":{"State1":state_var1,"State2":stae_var1}},...},
+            "987..": {"object":Component987...,effects":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":(),"states":{"State1":state_var1,"State2":stae_var1}},...},
             ...
         }
         '''
         self.compStore = {}
+
+        self.reconcilationStack = []
 
         # global store of States
         self.store = {}
@@ -53,7 +51,7 @@ class Pie():
 
         # TODO : Remove clear of console
         # clear the pyscript logs
-        console.clear()
+        # console.clear()
 
     def dispatchReconcile(self):
         start = datetime.now()
@@ -63,7 +61,7 @@ class Pie():
         self.currVDOM=self.renderElement()
         
         end = datetime.now()
-        console.log('CREATION OF VDOM TOOK: ', to_js(str(end-start)))
+        # console.log('CREATION OF VDOM TOOK: ', (str(end-start)))
 
         # rerender whole tree
         #self.root.removeChild(self.root.firstElementChild)
@@ -72,7 +70,7 @@ class Pie():
         start = datetime.now()
         self.reconcile(None, self.root.firstChild, self.prevVDOM, self.currVDOM)
         end = datetime.now()
-        console.log('RECONCILATION TOOK : ', to_js(str(end-start)))
+        # console.log('RECONCILATION TOOK : ', (str(end-start)))
 
     def isComponentInstance(self,element):
         if type(element) is Component:
@@ -80,18 +78,8 @@ class Pie():
         return False
 
     def construct(self, func, key, props):   # PROTOTYPE tag-function callback, key-string, props-dictionary
-        instanceId = # FIXME syntax & import
+        instanceId = uuid() # type(instanceId) is <class 'uuid.UUID'>
         return Component(func,key,props,instanceId)
-
-    def componentExists(self,tag):  # OPTIMIZE give an appropriate name
-        if self.compStore.get(tag) is None:
-            return False
-        return True
-
-    def instanceExists(self,tag,instanceId):
-        if self.compStore[tag].get(instanceId) is None:
-            return False
-        return True
 
     def storeInstance(self,instance):
         self.compStore[instance.instanceId]['object']=instance
@@ -126,25 +114,19 @@ class Pie():
                 'children': children
             }
         else:   # If tag is a Component
+            '''
             # Creation of instanceId
             # HACK Have to change stack frame index if below code is wrapped inside a function
             frameObj=getframe(1)
             byteInstr=frameObj.f_lasti    # Byte code instruction number
             parentName=frameObj.f_code.co_name  # Name of the component which is calling RPE(parent component)
             tagStr=tag.__name__
+            '''
             
-
             if children != None:
                 raise Exception('Components cannot have children')
             
-            compExist=self.componentExists(tagStr)
-            
-            if compExist:
-                if self.instanceExists(tagStr,instanceId): # FIXME How will the instanceId be given? -If tag is an object
-                    return self.compStore[tagStr][instanceId]['object']
-
             obj=self.construct(tag,key,props)
-            self.compStore[tagStr]=self.compStore[tagStr] if self.compExist else {}
             self.storeInstance(obj)
             return obj
 
@@ -202,9 +184,19 @@ class Pie():
 
         return el
 
+    def pop(self):
+        x = self.reconcilationStack.pop() if len(self.reconcilationStack) > 0 else None
+        return x
+    
+    def push(self, comp):
+        self.reconcilationStack.insert(0, comp)
+    
+    def peek(self):
+        return self.reconcilationStack[0] if len(self.reconcilationStack) > 0 else None
 
-    def reconcile(Component, dom):
+    def reconcile(Component, oldVdomElement, newVdomElement, domElement):
         """
+        if 
         App
             div
                 p
@@ -280,4 +272,6 @@ class Pie():
                             - check props => store changes
                     - compState[currentOldVDOMComp] = Comp | new
         """
-        print("hello")
+        if (oldVdomElement == None and newVdomElement == None):
+            # construct 
+            pass

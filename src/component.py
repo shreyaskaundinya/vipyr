@@ -52,9 +52,8 @@ class Component():
                                                                         
     '''
     # CHECK Is an update function required? - keys,props,change while recreating VDOM
-    def createFragment(self,props):
-        self.props = props
-        tempInstance = self.func(props)
+    def createFragment(self):
+        tempInstance = self.func(self.props)
         self.newVDOMFrag = tempInstance.newVDOMFrag
         self.deleteInstance(tempInstance.instanceId)
 
