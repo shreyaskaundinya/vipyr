@@ -373,7 +373,7 @@ class Pie():
         CPE Content
         CPE h1 
         CPE div
-        App        
+        App
         """
         if type(tag) is str:
             # TODO : Fix the function part [maybe use func ref number instead of name]

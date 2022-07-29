@@ -1,4 +1,5 @@
 from json import dumps
+from pprint import pp
 from state import State
 # from event_consts import CREATE,REMOVE,REPLACE,UPDATE
 from datetime import datetime
@@ -101,18 +102,6 @@ class Pie():
 
         # stores root DOM element
         self.root = None    
-        
-        # global store of Components
-        '''
-        Add key the user gives as value to instanceId key in instance dictionary
-        PROTOTYPE:
-        {
-            "123..": {"object":Component123...,effects":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":(),"states":{"State1":state_var1,"State2":stae_var1}},...},
-            "987..": {"object":Component987...,effects":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":(),"states":{"State1":state_var1,"State2":stae_var1}},...},
-            ...
-        }
-        '''
-        self.compStore = {}
 
         self.top=-1
         self.reconcilationStack = []
@@ -126,14 +115,21 @@ class Pie():
 
         self.VDOM_currentComponent = None
 
+        self.mutations = {
+            'CREATE':[],
+            'UPDATE':[], # types are same, update occurs
+            'REPLACE':[], # types are different
+            'REMOVE':[]
+        }
+
         # TODO : Remove clear of console
         # clear the pyscript logs
         # console.clear()
 
-    def dispatchReconcile(self, component:Component):
-        if self.isInitialRender:
+    def dispatchReconcile(self, component:Component, renderState):
+        if renderState == "INITIAL":
             start = datetime.now()
-            self.reconcile(None, component, self.root)
+            self.reconcile(None, component, None)
             end = datetime.now()
         else:
             start = datetime.now()
@@ -143,32 +139,17 @@ class Pie():
 
         print('RECONCILATION TOOK : ', (str(end-start)))
 
-    def construct(self, func, key, props):   # PROTOTYPE tag-function callback, key-string, props-dictionary
-        instanceId = uuid() # type(instanceId) is <class 'uuid.UUID'>
-        return Component(func,key,props,instanceId)
+        self.commitMutations()
 
-    def storeInstance(self,instance):
-        self.compStore[instance.instanceId]['object']=instance
 
-    def deleteInstance(self, instanceId):
-        del self.compStore[instanceId]
-
-    '''
-        Way to avoid having seperate attributes in compStore:
-        temp=component.VDOMFrag
-        component.VODMFrag=component.createFragment()
-    '''
-    def isComponentInstance(element):
-        if type(element) is Component:
-            return True
-        return False
+    def isString(self, element):
+        return type(element) is str
 
     def createPieElement(self, key, tag, props, children):
         '''
         Function to create vdom element
         '''
         if type(tag) is str:
-            # TODO : Fix the function part [maybe use func ref number instead of name]
             hash_el = {
                 'key':key,
                 'type':tag,
@@ -182,23 +163,11 @@ class Pie():
                 'children': children
             }
         else:   # If tag is a Component
-            '''
-            # Creation of instanceId
-            # HACK Have to change stack frame index if below code is wrapped inside a function
-            frameObj=getframe(1)
-            byteInstr=frameObj.f_lasti    # Byte code instruction number
-            parentName=frameObj.f_code.co_name  # Name of the component which is calling RPE(parent component)
-            tagStr=tag.__name__
-            '''
-            
             if children != None:
                 raise Exception('Components cannot have children')
             
-            obj=self.construct(tag,key,props)
-            self.storeInstance(obj)
-            return obj
-
-        # Key can be used to differentiate between instances
+            return {'key':key,'tag':tag,'props':props,'children':children}
+            
     def pop(self):
         if (self.top) > 0:
             self.top-=1
@@ -213,20 +182,37 @@ class Pie():
     def peek(self):
         return self.reconcilationStack[self.top] if self.top >= 0 else None
 
-    def reconcile(self, oldVdomElement: Union[Component, dict, str, None], newVdomElement: Union[Component, dict, str, None], domElement):
+    def appendMutation(self):
+        pass
+    
+    def reconcile(self, oldVEle, newVEle, parentDom, domEle):
         """
-        if component
-            - if old vdom and new vdom are none
-                - construct and reconcile
-            - else
-                - push to stack
-                
-            
+        Cases:
+               OldVDOM, NewVDOM
+            1) None, None
+            2) None, Element
+            3) None, Component
+            4) None, str
+            5) Element, None
+            6) str, None
+            7) Component, None
+            8) str, str
+            9) str, element
+            10) str, Component
+            11) element, element
+            12) element, str
+            13) element, Component
+            14) Component, Component
+            15) Component, element
+            16) Component, str
         """
+        pass
+        
+    def reconcileChildren(self, oldChildren, newChildren):
+        pass
 
-        if self.isComponentInstance(oldVdomElement):
-            pass
-
+    def commitMutations():
+        pass
     
     def render(self, renderElement, props, rootDom):
         # renderElement is a function
@@ -234,6 +220,4 @@ class Pie():
         # root is the root div container
         self.root = rootDom
         self.VDOM_currentComponent=self.createPieElement(None, renderElement, props, None)
-
-        self.dispatchReconcile(self.VDOM_currentComponent)
-    
+        self.dispatchReconcile(self.VDOM_currentComponent, "INITIAL")
