@@ -6,8 +6,7 @@ class Component():
         self.oldKey=None
         self.newKey=key
         self.name=func.__name__
-        self.oldVDOMFrag=None
-        self.newVDOMFrag=None
+        self.VDOMFrag=None
         self.deleteInstance = deleteInstance
         self.DOMRef=None
     '''

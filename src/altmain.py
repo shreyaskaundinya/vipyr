@@ -1,11 +1,11 @@
 from json import dumps
+from js import document, console
+from pyodide import create_proxy, to_js
 from state import State
 # from event_consts import CREATE,REMOVE,REPLACE,UPDATE
 from datetime import datetime
 # from sys import _getframe as getframe
 from hashlib import blake2b
-from uuid import uuid4 as uuid
-from component import Component
 from typing import Union
 
 '''
@@ -104,18 +104,14 @@ class Pie():
         
         # global store of Components
         '''
-        Add key the user gives as value to instanceId key in instance dictionary
         PROTOTYPE:
         {
-            "123..": {"object":Component123...,effects":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":(),"states":{"State1":state_var1,"State2":stae_var1}},...},
-            "987..": {"object":Component987...,effects":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":(),"states":{"State1":state_var1,"State2":stae_var1}},...},
+            "Key1": {"dict":Component123},
+            "Key2": {"dict":Component987},
             ...
         }
         '''
         self.compStore = {}
-
-        self.top=-1
-        self.reconcilationStack = []
 
         # global store of States
         self.store = {}
@@ -143,25 +139,11 @@ class Pie():
 
         print('RECONCILATION TOOK : ', (str(end-start)))
 
-    def construct(self, func, key, props):   # PROTOTYPE tag-function callback, key-string, props-dictionary
-        instanceId = uuid() # type(instanceId) is <class 'uuid.UUID'>
-        return Component(func,key,props,instanceId)
+    def storeInstance(self,dictComp,key):
+        self.compStore[key]['dict']=dictComp
 
-    def storeInstance(self,instance):
-        self.compStore[instance.instanceId]['object']=instance
-
-    def deleteInstance(self, instanceId):
-        del self.compStore[instanceId]
-
-    '''
-        Way to avoid having seperate attributes in compStore:
-        temp=component.VDOMFrag
-        component.VODMFrag=component.createFragment()
-    '''
-    def isComponentInstance(element):
-        if type(element) is Component:
-            return True
-        return False
+    def deleteInstance(self, key):
+        del self.compStore[key]
 
     def createPieElement(self, key, tag, props, children):
         '''
@@ -182,38 +164,20 @@ class Pie():
                 'children': children
             }
         else:   # If tag is a Component
-            '''
-            # Creation of instanceId
-            # HACK Have to change stack frame index if below code is wrapped inside a function
-            frameObj=getframe(1)
-            byteInstr=frameObj.f_lasti    # Byte code instruction number
-            parentName=frameObj.f_code.co_name  # Name of the component which is calling RPE(parent component)
-            tagStr=tag.__name__
-            '''
-            
             if children != None:
                 raise Exception('Components cannot have children')
-            
-            obj=self.construct(tag,key,props)
-            self.storeInstance(obj)
-            return obj
+            dictComp={'key':key,'tag':tag,'props':props,'children':children,'domRef':None}  # TODO Add other attributes
+            self.storeInstance(dictComp,key)
+            return dictComp
 
-        # Key can be used to differentiate between instances
-    def pop(self):
-        if (self.top) > 0:
-            self.top-=1
-            return self.reconcilationStack.pop()
-        else:
-            return None
-    
-    def push(self, comp):
-        self.reconcilationStack.insert(self.top, comp)
-        self.top+=1
-        
-    def peek(self):
-        return self.reconcilationStack[self.top] if self.top >= 0 else None
+    def createElement(self,key):
+        dictComp=self.compStore[key]
+        # Create DOM element
+        domElem=document.createElement(dictComp['tag'])
+        # Add props as attributes        
+        pass
 
-    def reconcile(self, oldVdomElement: Union[Component, dict, str, None], newVdomElement: Union[Component, dict, str, None], domElement):
+    def reconcile(self, oldVdomElement: Union[dict, str, None], newVdomElement: Union[dict, str, None], domElement):
         """
         if component
             - if old vdom and new vdom are none
