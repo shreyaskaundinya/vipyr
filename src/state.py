@@ -47,7 +47,7 @@ class State:
             if self.state == action:
                 return
             self.state = action
-
+        # OPTIMIZE batch before calling dispatcher
         self.dispatcher()
 
     def get(self, key = None):

@@ -26,6 +26,7 @@
     </body>
 
     <py-script>
+        '''
         from pie import Pie
         from js import alert
 
@@ -142,6 +143,23 @@
             rpy.render(App, props, root)
 
         Render()
-
+        '''
+        import sys
+        import time
+        def Comp():
+            print("****")
+        def createPieElement(callback):
+            frame=sys._getframe(1)
+            line_no=frame.f_lasti
+            name=frame.f_code.co_name
+            #print(frame,line_no,name)
+        class X():
+            def App():
+                createPieElement(Comp);createPieElement(Comp)
+        start=(time.time())
+        for i in range(0,100000):
+            X.App()
+        stop=(time.time())
+        print(stop-start)
     </py-script>
 </html>
