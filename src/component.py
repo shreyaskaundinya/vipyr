@@ -6,6 +6,7 @@ class Component():
         self.key=None
         self.name=func.__name__
         self.VDOMFrag=None
+        self.deleteInstance = deleteInstance
         self.DOMRef=None
 
     # CHECK Is an update function required? - keys,props,change while recreating VDOM

@@ -5,6 +5,8 @@ from state import State
 # from event_consts import CREATE,REMOVE,REPLACE,UPDATE
 from datetime import datetime
 from hashlib import blake2b
+from sys import _getframe
+from functools import cache
 
 class Pie():
     def __init__(self):
@@ -24,7 +26,8 @@ class Pie():
         # Prototype: {"Component1":{"Effect1":{"old_dep":None,"new_dep":None,"effect":(),"cleanup":()},.....},"stage":"Mounted"},........}
         self.effects={}
 
-        self.VDOM_currentComponent = None
+        self.VDOM_currentComponent = []
+        self.depth = 0
 
         # TODO : Remove clear of console
         # clear the pyscript logs
@@ -35,7 +38,7 @@ class Pie():
 
         # create new VDOM
         self.prevVDOM=self.currVDOM
-        self.currVDOM=self.renderElement()
+        self.currVDOM=self.createPieElement(None, self.renderElement, {}, None)
         
         end = datetime.now()
         console.log('CREATION OF VDOM TOOK: ', to_js(str(end-start)))
@@ -45,7 +48,7 @@ class Pie():
         #self.root.appendChild(self.createElement(self.currVDOM))
 
         start = datetime.now()
-        self.reconcile(None, self.root.firstChild, self.prevVDOM, self.currVDOM)
+        self.reconcile(self.root, self.root.firstChild, self.prevVDOM, self.currVDOM)
         end = datetime.now()
         console.log('RECONCILATION TOOK : ', to_js(str(end-start)))
         
@@ -348,51 +351,55 @@ class Pie():
                 else:
                     DOM.appendChild(self.createElement(newElem['children'][i]))
 
-    def constructComponent(self, tag, props):
-        self.VDOM_currentComponent = tag.__name__
-        return tag(props)
+    def constructComponent(self, key, tag, props):
         
+        # self.VDOM_currentComponent = blake2b(ID.encode()).hexdigest()
+
+        pass
+    
+    # @cache
     def createPieElement(self, key, tag, props, children):
         '''
         Function to create vdom element
         '''
-        """
-        App
-            return rpy.createPieElement(None, "div", {"id": "app"}, [
-                rpy.createPieElement(None, "h1", None, "ReactPy Project"),
-                rpy.createPieElement(None, Content, None, None),
-            ])
-        """
-
-        """
-        Call stack:
-        
-        CPE p
-        CPE div
-        Content(props)
-        CPE Content
-        CPE h1 
-        CPE div
-        App
-        """
         if type(tag) is str:
             # TODO : Fix the function part [maybe use func ref number instead of name]
+            newProps = props if props else {"class": ""}
+
+            newProps["class"] = ""
+            
+            # curr = self.VDOM_currentComponent[-1]
+            
+            # if curr[1] == 0:
+            #     console.log(tag, to_js(curr))
+
+            # curr[1] += 1
 
             hash_el = {
                 'key':key,
                 'type':tag,
-                'props': [props[k].__name__ if self.isFunc(props[k]) else props[k] for k in props] if props else None,
+                'props': [newProps[k].__name__ if self.isFunc(newProps[k]) else newProps[k] for k in newProps] if newProps else None,
                 'component': self.VDOM_currentComponent
             }
+            
             return {
-                'hashed_key' : blake2b(dumps(hash_el).encode()).hexdigest(), 
+                'hashed_key' : blake2b(dumps(hash_el).encode()).hexdigest(),
                 'hashed_children' : blake2b(children.encode()).hexdigest() if type(children) is str else None, 
                 **hash_el, 
-                'props': props, 
+                'props': newProps, 
                 'children': children
             }
         else:
-            return self.constructComponent(tag, props)
+            frame1 = _getframe(1)
+            line_no1 = frame1.f_lasti
+            name1 = frame1.f_code
+            newProps = props if props else {"class": ""}
+            ID = blake2b((str(name1)+str(line_no1)+str(key)).encode()).hexdigest()
+            newProps["class"] =  ID
+            self.VDOM_currentComponent.append([tag.__name__, 0])
+            x = tag(newProps)
+            self.VDOM_currentComponent.pop()
+            return x
 
     def createElement(self, element):
         '''
@@ -453,5 +460,9 @@ class Pie():
         '''
         self.renderElement = element
         self.root = root
+
+        #self.currVDOM = self.renderElement()
+        #root.appendChild(self.createElement(self.currVDOM))
         
         self.dispatchReconcile()
+        # self.root.appendChild(self.createElement(self.renderElement()))
